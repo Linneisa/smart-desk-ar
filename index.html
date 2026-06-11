@@ -93,7 +93,7 @@
     /* Container — pointer-events:none, zona individual yang all */
     #tap-zones {
       position:absolute; top:0; left:0; right:0; bottom:0;
-      display:none; pointer-events:none;
+      display:block; pointer-events:none; /* DEBUG: selalu tampil */
     }
     #tap-zones.active { display:block; }
 
@@ -107,9 +107,9 @@
       -webkit-tap-highlight-color:transparent;
     }
     /* Posisi tiap zona (sesuai posisi objek 3D di layar) */
-    #zone-slides { left:10%; width:28%; }
-    #zone-video  { left:36%; width:28%; }
-    #zone-quiz   { left:62%; width:28%; }
+    #zone-slides { left:10%; width:28%; background:rgba(255,0,0,.3);   border:2px solid white; border-radius:8px; }
+    #zone-video  { left:36%; width:28%; background:rgba(0,255,0,.3);   border:2px solid white; border-radius:8px; }
+    #zone-quiz   { left:62%; width:28%; background:rgba(0,0,255,.3);   border:2px solid white; border-radius:8px; }
 
     /* Label kecil di bawah zona */
     .zone-label {
@@ -445,21 +445,21 @@
 
   <!-- Tap zones — aktif saat marker terdeteksi, transparan di layar -->
   <div id="tap-zones">
-    <div class="tap-zone" id="zone-slides" onclick="tapZone('modal-slides',event)">
+    <div class="tap-zone" id="zone-slides" onclick="console.log('Zona kiri diklik - buka slides'); alert('Buku diklik!'); tapZone('modal-slides',event)">
       <div class="zone-label">
         <span class="zi">📚</span>
         <span class="zt">SLIDES</span>
         <span class="zs">Materi AR</span>
       </div>
     </div>
-    <div class="tap-zone" id="zone-video" onclick="tapZone('modal-video',event)">
+    <div class="tap-zone" id="zone-video" onclick="console.log('Zona tengah diklik - buka video'); alert('Poster diklik!'); tapZone('modal-video',event)">
       <div class="zone-label">
         <span class="zi">🎬</span>
         <span class="zt">VIDEO</span>
         <span class="zs">Tutorial</span>
       </div>
     </div>
-    <div class="tap-zone" id="zone-quiz" onclick="tapZone('modal-quiz',event)">
+    <div class="tap-zone" id="zone-quiz" onclick="console.log('Zona kanan diklik - buka kuis'); alert('Kuis diklik!'); tapZone('modal-quiz',event)">
       <div class="zone-label">
         <span class="zi">🎯</span>
         <span class="zt">KUIS</span>

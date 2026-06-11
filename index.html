@@ -184,14 +184,15 @@
 <body>
 
   <!--
-    AR.js + A-Frame scene.
-    Rules that must be followed:
-    • embedded   — renders into the page (not fullscreen VR)
-    • arjs        — only sourceType + debugUIEnabled; no detectionMode/matrixCodeType
-                   (those are for QR/matrix barcodes, they BREAK Hiro pattern detection)
-    • NO renderer="logarithmicDepthBuffer" — known to break AR.js geometry rendering
-    • ONE camera entity: <a-entity camera> as direct child of a-scene
-    • NO <a-camera-static> — that creates a second, conflicting camera
+    Konfigurasi a-scene:
+    • embedded + vr-mode-ui="enabled: false" — render ke halaman, tanpa VR mode
+    • arjs: sourceType + debugUIEnabled saja. detectionMode/matrixCodeType TIDAK digunakan
+      karena Hiro adalah pattern marker, bukan QR/matrix barcode — setting itu justru
+      mematikan deteksi Hiro.
+    • renderer="logarithmicDepthBuffer" juga TIDAK digunakan — tidak mempengaruhi zoom,
+      dan diketahui merusak render geometry di AR.js.
+    • Fix zoom/ukuran objek: semua konten marker dibungkus dalam <a-entity scale="0.5 0.5 0.5">
+      sehingga seluruh meja + objek menyusut setengahnya secara proporsional.
   -->
   <a-scene
     embedded
@@ -203,62 +204,62 @@
     <!-- ── HIRO MARKER ─────────────────────────────── -->
     <a-marker preset="hiro" id="main-marker">
 
-      <!-- Test box — must appear immediately above the marker when working -->
-      <a-box position="0 0.5 0" material="color: red;"></a-box>
+      <!--
+        Semua objek dibungkus di sini dengan scale="0.5 0.5 0.5".
+        Ini cara paling bersih untuk memperkecil seluruh scene secara proporsional
+        tanpa mengubah posisi dan ukuran relatif tiap objek.
+        Turunkan ke 0.4 atau 0.3 jika masih terlalu besar di perangkat Anda.
+      -->
+      <a-entity id="desk-group" position="0 0 0" scale="0.5 0.5 0.5">
 
-      <!-- ── MEJA VIRTUAL ──────────────────────────── -->
-      <!-- Permukaan -->
-      <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4" color="#1a237e"></a-box>
-      <!-- Kaki -->
-      <a-box position="-0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position=" 0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position="-0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position=" 0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <!-- Garis aksen -->
-      <a-box position="0 0.645 0" width="2.22" height="0.01" depth="1.42" color="#00bcd4" opacity="0.6"></a-box>
+        <!-- ── MEJA VIRTUAL ──────────────────────────── -->
+        <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4" color="#1a237e"></a-box>
+        <!-- Kaki -->
+        <a-box position="-0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+        <a-box position=" 0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+        <a-box position="-0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+        <a-box position=" 0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+        <!-- Garis aksen -->
+        <a-box position="0 0.645 0" width="2.22" height="0.01" depth="1.42" color="#00bcd4" opacity="0.6"></a-box>
 
-      <!-- ── OBJEK 1: BUKU → slides.html ────────────── -->
-      <a-entity id="book" position="-0.7 0.8 0" class="clickable" data-target="slides.html">
-        <!-- Hitbox transparan untuk raycaster -->
-        <a-box width="0.35" height="0.45" depth="0.12" opacity="0" color="white"></a-box>
-        <!-- Visual -->
-        <a-box id="book-body" width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
-        <a-box position="0.02 0 0.04"   width="0.22" height="0.29" depth="0.01" color="#fff9c4"></a-box>
-        <a-box position="0.02 0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-        <a-box position="0.02 0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-        <a-box position="0.02 -0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-        <a-text value="SLIDES" position="0 -0.26 0" align="center" color="white"  width="1.5"></a-text>
-        <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
-      </a-entity>
+        <!-- ── OBJEK 1: BUKU → slides.html ────────────── -->
+        <a-entity id="book" position="-0.7 0.8 0" class="clickable" data-target="slides.html">
+          <a-box width="0.35" height="0.45" depth="0.12" opacity="0" color="white"></a-box>
+          <a-box id="book-body" width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
+          <a-box position="0.02 0 0.04"    width="0.22" height="0.29"  depth="0.01"  color="#fff9c4"></a-box>
+          <a-box position="0.02 0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+          <a-box position="0.02 0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+          <a-box position="0.02 -0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+          <a-text value="SLIDES"    position="0 -0.26 0" align="center" color="white"    width="1.5"></a-text>
+          <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4"  width="1.2"></a-text>
+        </a-entity>
 
-      <!-- ── OBJEK 2: POSTER → video.html ─────────── -->
-      <a-entity id="poster" position="0 0.8 0" class="clickable" data-target="video.html">
-        <!-- Hitbox -->
-        <a-box width="0.36" height="0.48" depth="0.1" opacity="0" color="white"></a-box>
-        <!-- Visual -->
-        <a-box id="poster-body" width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
-        <a-box position="0 0 0.02"  width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
-        <a-cone position="0 0 0.03" rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
-        <a-text value="VIDEO" position="0 -0.26 0" align="center" color="white"  width="1.5"></a-text>
-        <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
-      </a-entity>
+        <!-- ── OBJEK 2: POSTER → video.html ─────────── -->
+        <a-entity id="poster" position="0 0.8 0" class="clickable" data-target="video.html">
+          <a-box width="0.36" height="0.48" depth="0.1" opacity="0" color="white"></a-box>
+          <a-box id="poster-body" width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
+          <a-box  position="0 0 0.02"  width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
+          <a-cone position="0 0 0.03"  rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
+          <a-text value="VIDEO"       position="0 -0.26 0" align="center" color="white"   width="1.5"></a-text>
+          <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
+        </a-entity>
 
-      <!-- ── OBJEK 3: KUIS → quiz.html ─────────────── -->
-      <a-entity id="quiz-btn" position="0.7 0.8 0" class="clickable" data-target="quiz.html">
-        <!-- Hitbox -->
-        <a-box width="0.36" height="0.36" depth="0.16" opacity="0" color="white"></a-box>
-        <!-- Visual -->
-        <a-cylinder id="quiz-body" radius="0.14" height="0.08" color="#00897b"></a-cylinder>
-        <a-text value="?" position="0 0.12 0" align="center" color="white"  width="1.8"></a-text>
-        <a-text value="KUIS" position="0 -0.22 0" align="center" color="white"  width="1.5"></a-text>
-        <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
-      </a-entity>
+        <!-- ── OBJEK 3: KUIS → quiz.html ─────────────── -->
+        <a-entity id="quiz-btn" position="0.7 0.8 0" class="clickable" data-target="quiz.html">
+          <a-box width="0.36" height="0.36" depth="0.16" opacity="0" color="white"></a-box>
+          <a-cylinder id="quiz-body" radius="0.14" height="0.08" color="#00897b"></a-cylinder>
+          <a-text value="?"               position="0  0.12 0" align="center" color="white"   width="1.8"></a-text>
+          <a-text value="KUIS"            position="0 -0.22 0" align="center" color="white"   width="1.5"></a-text>
+          <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
+        </a-entity>
 
-      <!-- Label meja -->
-      <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
+        <!-- Label meja -->
+        <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
 
-      <!-- Lampu lokal di meja -->
-      <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.4"></a-light>
+        <!-- Lampu lokal -->
+        <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.4"></a-light>
+
+      </a-entity><!-- /desk-group -->
 
     </a-marker>
 
@@ -266,11 +267,7 @@
     <a-light type="ambient"     color="#ffffff" intensity="0.8"></a-light>
     <a-light type="directional" position="1 2 1" color="#ffffff" intensity="0.5"></a-light>
 
-    <!--
-      Camera: satu-satunya camera entity.
-      JANGAN pakai <a-camera-static> — itu membuat kamera duplikat yang konflik dengan AR.js.
-      Cursor fuse digunakan agar bisa klik tanpa touchscreen (gaze-based).
-    -->
+    <!-- Satu-satunya camera entity — jangan tambah <a-camera-static> -->
     <a-entity camera>
       <a-cursor
         fuse="true"

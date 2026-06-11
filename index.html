@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Smart Desk AR</title>
 
-  <!-- A-Frame 1.3.0 + AR.js 3.4.0 — verified compatible pair for marker-based AR -->
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.0/aframe/build/aframe-ar.js"></script>
 
@@ -18,7 +17,6 @@
       background: #000;
     }
 
-    /* a-scene must fill the viewport when using embedded */
     a-scene {
       position: fixed;
       top: 0; left: 0;
@@ -27,7 +25,6 @@
       z-index: 0;
     }
 
-    /* Ensure AR.js video feed fills screen correctly */
     .a-canvas {
       position: fixed !important;
       top: 0; left: 0;
@@ -35,7 +32,7 @@
       height: 100% !important;
     }
 
-    /* ── UI OVERLAY ─────────────────────────────────── */
+    /* ── UI OVERLAY ─────────────────────────────────────── */
     #ui-overlay {
       position: fixed;
       top: 0; left: 0;
@@ -44,6 +41,7 @@
       z-index: 999;
     }
 
+    /* Header */
     #header {
       position: absolute;
       top: 0; left: 0; right: 0;
@@ -64,36 +62,20 @@
     }
 
     #header h1 { color: white; font-size: 18px; font-weight: 700; }
-    #header p  { color: rgba(255,255,255,0.8); font-size: 11px; }
+    #header p  { color: rgba(255,255,255,0.75); font-size: 11px; }
 
-    #scan-hint {
+    /* Progress bar */
+    #progress-bar {
       position: absolute;
-      bottom: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(26,35,126,0.85);
-      color: white;
-      padding: 14px 24px;
-      border-radius: 30px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0,188,212,0.4);
-      pointer-events: none;
-      white-space: nowrap;
+      top: 64px; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
     }
-
-    #scan-hint .scan-icon {
-      font-size: 28px;
-      display: block;
-      margin-bottom: 6px;
-      animation: pulse 2s infinite;
-    }
-
-    #scan-hint p { font-size: 13px; }
-
-    @keyframes pulse {
-      0%,100% { transform: scale(1); opacity: 1; }
-      50%      { transform: scale(1.1); opacity: 0.7; }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00bcd4, #1a237e);
+      width: 0%;
+      transition: width 1s ease;
     }
 
     /* Viewfinder corner brackets */
@@ -110,30 +92,157 @@
       border-color: #00bcd4;
       border-style: solid;
     }
-    #corner-frame::before { top:0;    left:0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-    #corner-frame::after  { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-    #corner-frame .c2::before { top:0;    right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-    #corner-frame .c2::after  { bottom:0; left:0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    #corner-frame::before      { top:0;    left:0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    #corner-frame::after       { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    #corner-frame .c2::before  { top:0;    right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    #corner-frame .c2::after   { bottom:0; left:0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
 
-    #progress-bar {
+    /* Scan hint — tampil saat marker BELUM terdeteksi */
+    #scan-hint {
       position: absolute;
-      top: 64px; left: 0; right: 0;
-      height: 3px;
-      background: rgba(255,255,255,0.1);
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26,35,126,0.88);
+      color: white;
+      padding: 16px 28px;
+      border-radius: 30px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,188,212,0.4);
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 0.3s;
     }
-    #progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #00bcd4, #1a237e);
-      width: 0%;
-      transition: width 1s ease;
+    #scan-hint .scan-icon {
+      font-size: 30px;
+      display: block;
+      margin-bottom: 6px;
+      animation: pulse 2s infinite;
+    }
+    #scan-hint p { font-size: 13px; }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.12); opacity: 0.7; }
     }
 
+    /* ── AR BUTTONS — tampil saat marker TERDETEKSI ──── */
+    #ar-buttons {
+      position: absolute;
+      bottom: 88px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;               /* disembunyikan sampai markerFound */
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      pointer-events: all;
+    }
+
+    #ar-buttons.visible {
+      display: flex;
+      animation: slideUp 0.35s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0);    }
+    }
+
+    /* Label "Marker terdeteksi" */
+    #ar-detected-label {
+      background: rgba(0,188,212,0.15);
+      border: 1px solid rgba(0,188,212,0.5);
+      color: #00bcd4;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #ar-detected-label .dot {
+      width: 7px; height: 7px;
+      background: #00e676;
+      border-radius: 50%;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.2; }
+    }
+
+    /* Row 3 tombol navigasi */
+    #ar-btn-row {
+      display: flex;
+      gap: 10px;
+      background: rgba(10,14,39,0.90);
+      padding: 14px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(0,188,212,0.25);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .ar-nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1.5px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.07);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+      min-width: 76px;
+      transition: background 0.18s, border-color 0.18s, transform 0.18s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ar-nav-btn:active,
+    .ar-nav-btn:hover {
+      background: rgba(0,188,212,0.22);
+      border-color: #00bcd4;
+      transform: translateY(-2px);
+    }
+
+    .ar-nav-btn .btn-icon { font-size: 26px; }
+    .ar-nav-btn .btn-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.85);
+    }
+    .ar-nav-btn .btn-sub {
+      font-size: 9px;
+      color: #00bcd4;
+      margin-top: -4px;
+    }
+
+    /* Warna aksen tiap tombol */
+    .ar-nav-btn.btn-slides { border-color: rgba(229,57,53,0.3); }
+    .ar-nav-btn.btn-slides:active { background: rgba(229,57,53,0.2); border-color: #e53935; }
+
+    .ar-nav-btn.btn-video  { border-color: rgba(21,101,192,0.3); }
+    .ar-nav-btn.btn-video:active  { background: rgba(21,101,192,0.2); border-color: #1565c0; }
+
+    .ar-nav-btn.btn-quiz   { border-color: rgba(0,137,123,0.3); }
+    .ar-nav-btn.btn-quiz:active   { background: rgba(0,137,123,0.2); border-color: #00897b; }
+
+    /* Toast */
     #toast {
       position: absolute;
       top: 80px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.85);
+      background: rgba(0,0,0,0.88);
       color: white;
       padding: 10px 20px;
       border-radius: 20px;
@@ -146,54 +255,45 @@
     }
     #toast.show { opacity: 1; }
 
+    /* Bottom fallback menu — selalu tampil */
     #menu-panel {
       position: absolute;
       bottom: 0; left: 0; right: 0;
       background: linear-gradient(135deg, #1a237eee, #0d47a1ee);
       backdrop-filter: blur(15px);
-      padding: 16px;
+      padding: 10px 16px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       justify-content: center;
-      border-top: 1px solid rgba(0,188,212,0.3);
+      border-top: 1px solid rgba(0,188,212,0.25);
       pointer-events: all;
     }
 
     .menu-btn {
       flex: 1;
-      max-width: 100px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(0,188,212,0.4);
-      color: white;
-      padding: 10px 8px;
-      border-radius: 12px;
+      max-width: 90px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.6);
+      padding: 8px 6px;
+      border-radius: 10px;
       text-align: center;
-      cursor: pointer;
       text-decoration: none;
-      transition: all 0.2s;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      -webkit-tap-highlight-color: transparent;
     }
-    .menu-btn:active { background: rgba(0,188,212,0.3); border-color: #00bcd4; }
-    .menu-btn .icon { font-size: 20px; }
-    .menu-btn span  { font-size: 10px; font-weight: 600; }
+    .menu-btn .icon { font-size: 16px; }
+    .menu-btn:active { background: rgba(0,188,212,0.2); color: white; }
   </style>
 </head>
 <body>
 
-  <!--
-    Konfigurasi a-scene:
-    • embedded + vr-mode-ui="enabled: false" — render ke halaman, tanpa VR mode
-    • arjs: sourceType + debugUIEnabled saja. detectionMode/matrixCodeType TIDAK digunakan
-      karena Hiro adalah pattern marker, bukan QR/matrix barcode — setting itu justru
-      mematikan deteksi Hiro.
-    • renderer="logarithmicDepthBuffer" juga TIDAK digunakan — tidak mempengaruhi zoom,
-      dan diketahui merusak render geometry di AR.js.
-    • Fix zoom/ukuran objek: semua konten marker dibungkus dalam <a-entity scale="0.5 0.5 0.5">
-      sehingga seluruh meja + objek menyusut setengahnya secara proporsional.
-  -->
   <a-scene
     embedded
     arjs="sourceType: webcam; debugUIEnabled: false;"
@@ -201,209 +301,129 @@
     loading-screen="enabled: false"
   >
 
-    <!-- ── HIRO MARKER ─────────────────────────────── -->
     <a-marker preset="hiro" id="main-marker">
 
-      <!--
-        Semua objek dibungkus di sini dengan scale="0.5 0.5 0.5".
-        Ini cara paling bersih untuk memperkecil seluruh scene secara proporsional
-        tanpa mengubah posisi dan ukuran relatif tiap objek.
-        Turunkan ke 0.4 atau 0.3 jika masih terlalu besar di perangkat Anda.
-      -->
+      <!-- Semua objek 3D murni visual — navigasi kini via tombol HTML overlay -->
       <a-entity id="desk-group" position="0 0 0" scale="0.5 0.5 0.5">
 
-        <!-- ── MEJA VIRTUAL ──────────────────────────── -->
+        <!-- Meja -->
         <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4" color="#1a237e"></a-box>
-        <!-- Kaki -->
         <a-box position="-0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
         <a-box position=" 0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
         <a-box position="-0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
         <a-box position=" 0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-        <!-- Garis aksen -->
         <a-box position="0 0.645 0" width="2.22" height="0.01" depth="1.42" color="#00bcd4" opacity="0.6"></a-box>
 
-        <!-- ── OBJEK 1: BUKU → slides.html ────────────── -->
-        <a-entity id="book" position="-0.7 0.8 0" class="clickable" data-target="slides.html">
-          <a-box width="0.35" height="0.45" depth="0.12" opacity="0" color="white"></a-box>
-          <a-box id="book-body" width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
-          <a-box position="0.02 0 0.04"    width="0.22" height="0.29"  depth="0.01"  color="#fff9c4"></a-box>
-          <a-box position="0.02 0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-          <a-box position="0.02 0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+        <!-- Buku (visual saja) -->
+        <a-entity position="-0.7 0.8 0">
+          <a-box width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
+          <a-box position="0.02 0 0.04"     width="0.22" height="0.29"   depth="0.01"  color="#fff9c4"></a-box>
+          <a-box position="0.02  0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+          <a-box position="0.02  0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
           <a-box position="0.02 -0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-          <a-text value="SLIDES"    position="0 -0.26 0" align="center" color="white"    width="1.5"></a-text>
-          <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4"  width="1.2"></a-text>
+          <a-text value="SLIDES"    position="0 -0.26 0" align="center" color="white"   width="1.5"></a-text>
+          <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
         </a-entity>
 
-        <!-- ── OBJEK 2: POSTER → video.html ─────────── -->
-        <a-entity id="poster" position="0 0.8 0" class="clickable" data-target="video.html">
-          <a-box width="0.36" height="0.48" depth="0.1" opacity="0" color="white"></a-box>
-          <a-box id="poster-body" width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
-          <a-box  position="0 0 0.02"  width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
-          <a-cone position="0 0 0.03"  rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
+        <!-- Poster/Video (visual saja) -->
+        <a-entity position="0 0.8 0">
+          <a-box width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
+          <a-box  position="0 0 0.02" width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
+          <a-cone position="0 0 0.03" rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
           <a-text value="VIDEO"       position="0 -0.26 0" align="center" color="white"   width="1.5"></a-text>
           <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
         </a-entity>
 
-        <!-- ── OBJEK 3: KUIS → quiz.html ─────────────── -->
-        <a-entity id="quiz-btn" position="0.7 0.8 0" class="clickable" data-target="quiz.html">
-          <a-box width="0.36" height="0.36" depth="0.16" opacity="0" color="white"></a-box>
-          <a-cylinder id="quiz-body" radius="0.14" height="0.08" color="#00897b"></a-cylinder>
+        <!-- Tombol Kuis (visual saja) -->
+        <a-entity position="0.7 0.8 0">
+          <a-cylinder radius="0.14" height="0.08" color="#00897b"></a-cylinder>
           <a-text value="?"               position="0  0.12 0" align="center" color="white"   width="1.8"></a-text>
           <a-text value="KUIS"            position="0 -0.22 0" align="center" color="white"   width="1.5"></a-text>
           <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
         </a-entity>
 
-        <!-- Label meja -->
         <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
-
-        <!-- Lampu lokal -->
         <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.4"></a-light>
 
-      </a-entity><!-- /desk-group -->
+      </a-entity>
 
     </a-marker>
 
-    <!-- Pencahayaan global -->
     <a-light type="ambient"     color="#ffffff" intensity="0.8"></a-light>
     <a-light type="directional" position="1 2 1" color="#ffffff" intensity="0.5"></a-light>
 
-    <!-- Camera dengan ring visual (fuse sebagai fallback gaze) -->
-    <a-entity camera>
-      <a-cursor
-        id="gaze-cursor"
-        fuse="true"
-        fuse-timeout="1500"
-        color="#00bcd4"
-        opacity="0.8"
-        raycaster="objects: .clickable; recursive: true"
-        geometry="primitive: ring; radiusInner: 0.018; radiusOuter: 0.028">
-      </a-cursor>
-    </a-entity>
-
-    <!--
-      Touch/mouse cursor — HARUS di luar camera entity.
-      rayOrigin: mouse membuat cursor cast ray dari posisi tap di layar,
-      bukan dari tengah layar. Inilah yang membuat tap langsung ke objek bekerja.
-      Cursor ini menangani: klik mouse (desktop) + tap (mobile).
-    -->
-    <a-entity
-      id="mouse-cursor"
-      cursor="fuse: false; rayOrigin: mouse"
-      raycaster="objects: .clickable; recursive: true">
-    </a-entity>
+    <a-entity camera></a-entity>
 
   </a-scene>
 
-  <!-- ── UI OVERLAY (z-index 999, di atas canvas AR) ── -->
+  <!-- ── UI OVERLAY ───────────────────────────────────── -->
   <div id="ui-overlay">
+
     <div id="progress-bar"><div id="progress-fill"></div></div>
 
     <div id="header">
       <div class="logo">🎯</div>
       <div>
         <h1>Smart Desk AR</h1>
-        <p>Arahkan kamera ke marker Hiro</p>
+        <p id="header-sub">Arahkan kamera ke marker Hiro</p>
       </div>
     </div>
 
     <div id="corner-frame"><div class="c2" style="position:absolute;inset:0;"></div></div>
 
+    <!-- Tampil saat marker BELUM terdeteksi -->
     <div id="scan-hint">
       <span class="scan-icon">📷</span>
       <p>Scan marker Hiro untuk melihat meja virtual</p>
     </div>
 
+    <!-- Tampil saat marker TERDETEKSI -->
+    <div id="ar-buttons">
+      <div id="ar-detected-label">
+        <span class="dot"></span>
+        Meja AR Terdeteksi — Pilih Aktivitas
+      </div>
+      <div id="ar-btn-row">
+        <a href="slides.html" class="ar-nav-btn btn-slides">
+          <span class="btn-icon">📚</span>
+          <span class="btn-label">SLIDES</span>
+          <span class="btn-sub">Materi AR</span>
+        </a>
+        <a href="video.html" class="ar-nav-btn btn-video">
+          <span class="btn-icon">🎬</span>
+          <span class="btn-label">VIDEO</span>
+          <span class="btn-sub">Tutorial AR</span>
+        </a>
+        <a href="quiz.html" class="ar-nav-btn btn-quiz">
+          <span class="btn-icon">🎯</span>
+          <span class="btn-label">KUIS</span>
+          <span class="btn-sub">Uji Pengetahuan</span>
+        </a>
+      </div>
+    </div>
+
     <div id="toast"></div>
 
+    <!-- Bottom fallback — selalu bisa diakses -->
     <div id="menu-panel">
       <a href="slides.html" class="menu-btn"><span class="icon">📚</span><span>SLIDES</span></a>
       <a href="video.html"  class="menu-btn"><span class="icon">🎬</span><span>VIDEO</span></a>
       <a href="quiz.html"   class="menu-btn"><span class="icon">🎯</span><span>KUIS</span></a>
     </div>
+
   </div>
 
   <script>
-    // ── ar-interactive component ──────────────────────────────────────
-    // Menangani hover (warna berubah) dan click/tap (navigasi ke halaman).
-    // Event 'click' diterima dari DUA sumber:
-    //   1. mouse-cursor (rayOrigin: mouse) — ketika tap mengenai objek
-    //   2. gaze-cursor (fuse) — setelah tatap 1.5 detik (fallback)
-    AFRAME.registerComponent('ar-interactive', {
-      schema: {
-        target:      { type: 'string' },
-        normalColor: { type: 'string' },
-        hoverColor:  { type: 'string' }
-      },
-      init: function () {
-        var el = this.el;
-        var d  = this.data;
-
-        function getBody() {
-          return el.querySelector('[id$="-body"]');
-        }
-
-        el.addEventListener('mouseenter', function () {
-          var body = getBody();
-          if (body) body.setAttribute('material', 'color', d.hoverColor);
-          el.setAttribute('scale', '1.12 1.12 1.12');
-          showToast('Tap untuk membuka ' + d.target.replace('.html', '').toUpperCase());
-        });
-
-        el.addEventListener('mouseleave', function () {
-          var body = getBody();
-          if (body) body.setAttribute('material', 'color', d.normalColor);
-          el.setAttribute('scale', '1 1 1');
-        });
-
-        // 'click' mencakup: tap via mouse-cursor + fuse gaze + klik mouse desktop
-        el.addEventListener('click', function () {
-          showToast('Membuka ' + d.target.replace('.html', '').toUpperCase() + '...');
-          setTimeout(function () { window.location.href = d.target; }, 250);
-        });
-      }
-    });
-
-    // ── Pasang ar-interactive setelah scene load ──────────────────────
-    document.querySelector('a-scene').addEventListener('loaded', function () {
-      document.getElementById('book').setAttribute('ar-interactive',
-        'target: slides.html; normalColor: #e53935; hoverColor: #ff6659');
-      document.getElementById('poster').setAttribute('ar-interactive',
-        'target: video.html; normalColor: #1565c0; hoverColor: #42a5f5');
-      document.getElementById('quiz-btn').setAttribute('ar-interactive',
-        'target: quiz.html; normalColor: #00897b; hoverColor: #4db6ac');
-
-      // ── Touch → Click bridge ────────────────────────────────────────
-      // Beberapa browser mobile (terutama WebView Android) menunda atau
-      // memblokir synthetic 'click' setelah 'touchend'. Bridge ini
-      // mengkonversi 'touchstart' menjadi MouseEvent 'click' secara langsung
-      // pada koordinat tap yang sama, sehingga mouse-cursor bisa memprosesnya.
-      var canvas = document.querySelector('canvas.a-canvas');
-      if (!canvas) canvas = document.querySelector('canvas');
-      if (canvas) {
-        canvas.addEventListener('touchstart', function (e) {
-          if (e.touches.length !== 1) return;
-          e.preventDefault();
-          var t = e.touches[0];
-          canvas.dispatchEvent(new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            clientX: t.clientX,
-            clientY: t.clientY
-          }));
-        }, { passive: false });
-      }
-    });
-
-    // ── Toast ─────────────────────────────────────────────────────────
+    // ── Toast ─────────────────────────────────────────────
     function showToast(msg) {
       var t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('show');
       clearTimeout(t._tid);
-      t._tid = setTimeout(function () { t.classList.remove('show'); }, 2200);
+      t._tid = setTimeout(function () { t.classList.remove('show'); }, 2500);
     }
 
-    // ── Progress bar ──────────────────────────────────────────────────
+    // ── Progress bar ──────────────────────────────────────
     (function () {
       var done = [
         localStorage.getItem('slides_session_3_done') === 'true',
@@ -413,17 +433,30 @@
       document.getElementById('progress-fill').style.width = (done / 3 * 100) + '%';
     })();
 
-    // ── Marker events ─────────────────────────────────────────────────
-    var marker   = document.getElementById('main-marker');
-    var scanHint = document.getElementById('scan-hint');
+    // ── Marker show/hide logic ────────────────────────────
+    var scanHint  = document.getElementById('scan-hint');
+    var arButtons = document.getElementById('ar-buttons');
+    var headerSub = document.getElementById('header-sub');
 
+    function showButtons() {
+      scanHint.style.display  = 'none';
+      arButtons.classList.add('visible');
+      headerSub.textContent   = 'Marker terdeteksi ✓';
+    }
+
+    function hideButtons() {
+      arButtons.classList.remove('visible');
+      scanHint.style.display  = '';
+      headerSub.textContent   = 'Arahkan kamera ke marker Hiro';
+    }
+
+    var marker = document.getElementById('main-marker');
     marker.addEventListener('markerFound', function () {
-      scanHint.style.display = 'none';
-      showToast('Meja AR terdeteksi! Tap objek untuk membuka');
+      showButtons();
+      showToast('Meja AR muncul! Pilih aktivitas di bawah');
     });
-
     marker.addEventListener('markerLost', function () {
-      scanHint.style.display = 'block';
+      hideButtons();
     });
   </script>
 </body>

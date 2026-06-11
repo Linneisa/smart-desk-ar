@@ -68,27 +68,6 @@
     #scan-hint p { font-size:13px; }
     @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.12);opacity:.7} }
 
-    #ar-buttons {
-      position:absolute; bottom:88px; left:50%; transform:translateX(-50%);
-      display:none; flex-direction:column; align-items:center; gap:12px; pointer-events:all;
-    }
-    #ar-buttons.visible { display:flex; animation:slideUp .35s ease; }
-    @keyframes slideUp {
-      from{opacity:0;transform:translateX(-50%) translateY(20px)}
-      to  {opacity:1;transform:translateX(-50%) translateY(0)}
-    }
-    #ar-detected-label {
-      background:rgba(0,188,212,.15); border:1px solid rgba(0,188,212,.5);
-      color:#00bcd4; padding:6px 16px; border-radius:20px;
-      font-size:12px; font-weight:700; letter-spacing:.5px;
-      display:flex; align-items:center; gap:6px;
-    }
-    #ar-detected-label .dot {
-      width:7px; height:7px; background:#00e676; border-radius:50%;
-      animation:blink 1.2s infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
-
     /* ── TAP ZONES ───────────────────────────────────── */
     /* Container — pointer-events:none, zona individual yang all */
     #tap-zones {
@@ -142,24 +121,6 @@
     @keyframes rippleAnim {
       to { transform:scale(1); opacity:0; }
     }
-
-    #ar-btn-row {
-      display:flex; gap:10px;
-      background:rgba(10,14,39,.9); padding:14px 18px;
-      border-radius:20px; border:1px solid rgba(0,188,212,.25);
-      backdrop-filter:blur(18px); box-shadow:0 8px 32px rgba(0,0,0,.5);
-    }
-    .ar-nav-btn {
-      display:flex; flex-direction:column; align-items:center; gap:5px;
-      padding:12px 16px; border-radius:14px; border:1.5px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.07); color:white; text-decoration:none;
-      cursor:pointer; min-width:76px; -webkit-tap-highlight-color:transparent;
-      transition:background .18s,border-color .18s,transform .18s;
-    }
-    .ar-nav-btn:active { transform:translateY(-2px); }
-    .ar-nav-btn .btn-icon  { font-size:26px; }
-    .ar-nav-btn .btn-label { font-size:10px; font-weight:700; letter-spacing:.5px; }
-    .ar-nav-btn .btn-sub   { font-size:9px; color:#00bcd4; margin-top:-3px; }
 
     #toast {
       position:absolute; top:80px; left:50%; transform:translateX(-50%);
@@ -465,23 +426,6 @@
         <span class="zt">KUIS</span>
         <span class="zs">Uji Pengetahuan</span>
       </div>
-    </div>
-  </div>
-
-  <div id="ar-buttons">
-    <div id="ar-detected-label">
-      <span class="dot"></span> Meja AR Terdeteksi — Pilih Aktivitas
-    </div>
-    <div id="ar-btn-row">
-      <button class="ar-nav-btn" onclick="openModal('modal-slides')">
-        <span class="btn-icon">📚</span><span class="btn-label">SLIDES</span><span class="btn-sub">Materi AR</span>
-      </button>
-      <button class="ar-nav-btn" onclick="openModal('modal-video')">
-        <span class="btn-icon">🎬</span><span class="btn-label">VIDEO</span><span class="btn-sub">Tutorial AR</span>
-      </button>
-      <button class="ar-nav-btn" onclick="openModal('modal-quiz')">
-        <span class="btn-icon">🎯</span><span class="btn-label">KUIS</span><span class="btn-sub">Uji Pengetahuan</span>
-      </button>
     </div>
   </div>
 
@@ -978,21 +922,18 @@ function getWrongItems() {
    AR MARKER EVENTS
 ════════════════════════════════════════════════════ */
 var scanHint  = document.getElementById('scan-hint');
-var arButtons = document.getElementById('ar-buttons');
 var tapZones  = document.getElementById('tap-zones');
 var headerSub = document.getElementById('header-sub');
 
 document.getElementById('main-marker').addEventListener('markerFound', function() {
   scanHint.style.display = 'none';
   tapZones.classList.add('active');
-  arButtons.classList.add('visible');
   headerSub.textContent = 'Marker terdeteksi ✓';
   showToast('Meja AR muncul! Tap area objek atau tombol di bawah');
 });
 
 document.getElementById('main-marker').addEventListener('markerLost', function() {
   tapZones.classList.remove('active');
-  arButtons.classList.remove('visible');
   scanHint.style.display = '';
   headerSub.textContent = 'Arahkan kamera ke marker Hiro';
 });

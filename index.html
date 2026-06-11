@@ -93,7 +93,7 @@
     /* Container — pointer-events:none, zona individual yang all */
     #tap-zones {
       position:absolute; top:0; left:0; right:0; bottom:0;
-      display:block; pointer-events:none; /* DEBUG: selalu tampil */
+      display:none; pointer-events:none;
     }
     #tap-zones.active { display:block; }
 
@@ -106,10 +106,10 @@
       padding-bottom:6px; overflow:visible;
       -webkit-tap-highlight-color:transparent;
     }
-    /* Posisi tiap zona (sesuai posisi objek 3D di layar) */
-    #zone-slides { left:10%; width:28%; background:rgba(255,0,0,.3);   border:2px solid white; border-radius:8px; }
-    #zone-video  { left:36%; width:28%; background:rgba(0,255,0,.3);   border:2px solid white; border-radius:8px; }
-    #zone-quiz   { left:62%; width:28%; background:rgba(0,0,255,.3);   border:2px solid white; border-radius:8px; }
+    /* Posisi tiap zona — transparan, hanya label yang terlihat */
+    #zone-slides { left:10%; width:28%; }
+    #zone-video  { left:36%; width:28%; }
+    #zone-quiz   { left:62%; width:28%; }
 
     /* Label kecil di bawah zona */
     .zone-label {
@@ -445,21 +445,21 @@
 
   <!-- Tap zones — aktif saat marker terdeteksi, transparan di layar -->
   <div id="tap-zones">
-    <div class="tap-zone" id="zone-slides" onclick="console.log('Zona kiri diklik - buka slides'); alert('Buku diklik!'); tapZone('modal-slides',event)">
+    <div class="tap-zone" id="zone-slides" onclick="tapZone('modal-slides',event)">
       <div class="zone-label">
         <span class="zi">📚</span>
         <span class="zt">SLIDES</span>
         <span class="zs">Materi AR</span>
       </div>
     </div>
-    <div class="tap-zone" id="zone-video" onclick="console.log('Zona tengah diklik - buka video'); alert('Poster diklik!'); tapZone('modal-video',event)">
+    <div class="tap-zone" id="zone-video" onclick="tapZone('modal-video',event)">
       <div class="zone-label">
         <span class="zi">🎬</span>
         <span class="zt">VIDEO</span>
         <span class="zs">Tutorial</span>
       </div>
     </div>
-    <div class="tap-zone" id="zone-quiz" onclick="console.log('Zona kanan diklik - buka kuis'); alert('Kuis diklik!'); tapZone('modal-quiz',event)">
+    <div class="tap-zone" id="zone-quiz" onclick="tapZone('modal-quiz',event)">
       <div class="zone-label">
         <span class="zi">🎯</span>
         <span class="zt">KUIS</span>
@@ -571,15 +571,15 @@ var SESSIONS = [
 ];
 
 var VIDEOS = [
-  { id:1, title:'Pengenalan Augmented Reality - Apa itu AR?', ytId:'vz0UuCrW3TA',
+  { id:1, title:'Pengenalan Augmented Reality - Apa itu AR?', ytId:'WxzcD04is3o',
     label:'Sesi 1: Pengenalan AR', icon:'🌐', dur:'±15 menit', level:'Pemula',
     desc:'Video ini membahas pengenalan lengkap tentang AR: definisi, sejarah, dan perbedaan AR vs VR vs Mixed Reality.',
     pts:['Definisi dan konsep dasar AR','Sejarah perkembangan AR dari 1968 hingga kini','Perbedaan AR, VR, dan Mixed Reality','Contoh nyata aplikasi AR sehari-hari'] },
-  { id:2, title:'Cara Kerja Augmented Reality - Teknologi di Balik AR', ytId:'WxzcD04is3E',
+  { id:2, title:'Cara Kerja Augmented Reality - Teknologi di Balik AR', ytId:'vz0UuDMgGJQ',
     label:'Sesi 2: Cara Kerja AR', icon:'⚙️', dur:'±20 menit', level:'Menengah',
     desc:'Pelajari teknologi di balik AR: marker-based tracking, SLAM, computer vision, dan framework modern.',
     pts:['Cara kerja marker-based dan markerless AR','Teknologi computer vision dalam AR','Peran sensor IMU, kamera, dan GPS','Framework AR: ARKit, ARCore, AR.js'] },
-  { id:3, title:'Aplikasi AR di Dunia Nyata', ytId:'1t1gBVykneA',
+  { id:3, title:'Aplikasi AR di Dunia Nyata', ytId:'ASGcCWFnSAQ',
     label:'Sesi 3: Aplikasi AR', icon:'🚀', dur:'±18 menit', level:'Lanjutan',
     desc:'Eksplorasi penerapan AR di berbagai bidang: pendidikan, kesehatan, industri, dan peluang karir.',
     pts:['AR di pendidikan: buku interaktif dan lab virtual','AR di kesehatan: panduan operasi','AR di industri manufaktur dan retail','Tren masa depan: Spatial Computing'] }

@@ -88,6 +88,61 @@
       animation:blink 1.2s infinite;
     }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    /* ── TAP ZONES ───────────────────────────────────── */
+    /* Container — pointer-events:none, zona individual yang all */
+    #tap-zones {
+      position:absolute; top:0; left:0; right:0; bottom:0;
+      display:none; pointer-events:none;
+    }
+    #tap-zones.active { display:block; }
+
+    .tap-zone {
+      position:absolute;
+      top:28%; height:42%;
+      pointer-events:all; cursor:pointer;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:flex-end;
+      padding-bottom:6px; overflow:visible;
+      -webkit-tap-highlight-color:transparent;
+    }
+    /* Posisi tiap zona (sesuai posisi objek 3D di layar) */
+    #zone-slides { left:10%; width:28%; }
+    #zone-video  { left:36%; width:28%; }
+    #zone-quiz   { left:62%; width:28%; }
+
+    /* Label kecil di bawah zona */
+    .zone-label {
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      background:rgba(0,0,0,.55); border:1px solid rgba(0,188,212,.35);
+      border-radius:12px; padding:6px 10px; backdrop-filter:blur(6px);
+      animation:zoneLabelIn .4s ease; pointer-events:none;
+    }
+    @keyframes zoneLabelIn {
+      from{opacity:0;transform:translateY(8px)}
+      to  {opacity:1;transform:translateY(0)}
+    }
+    .zone-label .zi { font-size:18px; }
+    .zone-label .zt { font-size:9px; color:white; font-weight:700; letter-spacing:.4px; }
+    .zone-label .zs { font-size:8px; color:#00bcd4; margin-top:-1px; }
+
+    /* Subtle active flash on the zone background */
+    .tap-zone:active::before {
+      content:''; position:absolute; inset:0;
+      background:rgba(0,188,212,.12); border-radius:16px;
+    }
+
+    /* Ripple */
+    .ripple {
+      position:fixed; border-radius:50%;
+      background:rgba(0,188,212,.45); pointer-events:none;
+      transform:scale(0); z-index:1000;
+      animation:rippleAnim .55s ease-out forwards;
+    }
+    @keyframes rippleAnim {
+      to { transform:scale(1); opacity:0; }
+    }
+
     #ar-btn-row {
       display:flex; gap:10px;
       background:rgba(10,14,39,.9); padding:14px 18px;
@@ -386,6 +441,31 @@
   <div id="scan-hint">
     <span class="scan-icon">📷</span>
     <p>Scan marker Hiro untuk melihat meja virtual</p>
+  </div>
+
+  <!-- Tap zones — aktif saat marker terdeteksi, transparan di layar -->
+  <div id="tap-zones">
+    <div class="tap-zone" id="zone-slides" onclick="tapZone('modal-slides',event)">
+      <div class="zone-label">
+        <span class="zi">📚</span>
+        <span class="zt">SLIDES</span>
+        <span class="zs">Materi AR</span>
+      </div>
+    </div>
+    <div class="tap-zone" id="zone-video" onclick="tapZone('modal-video',event)">
+      <div class="zone-label">
+        <span class="zi">🎬</span>
+        <span class="zt">VIDEO</span>
+        <span class="zs">Tutorial</span>
+      </div>
+    </div>
+    <div class="tap-zone" id="zone-quiz" onclick="tapZone('modal-quiz',event)">
+      <div class="zone-label">
+        <span class="zi">🎯</span>
+        <span class="zt">KUIS</span>
+        <span class="zs">Uji Pengetahuan</span>
+      </div>
+    </div>
   </div>
 
   <div id="ar-buttons">
@@ -899,20 +979,41 @@ function getWrongItems() {
 ════════════════════════════════════════════════════ */
 var scanHint  = document.getElementById('scan-hint');
 var arButtons = document.getElementById('ar-buttons');
+var tapZones  = document.getElementById('tap-zones');
 var headerSub = document.getElementById('header-sub');
 
 document.getElementById('main-marker').addEventListener('markerFound', function() {
   scanHint.style.display = 'none';
+  tapZones.classList.add('active');
   arButtons.classList.add('visible');
   headerSub.textContent = 'Marker terdeteksi ✓';
-  showToast('Meja AR muncul! Pilih aktivitas di bawah');
+  showToast('Meja AR muncul! Tap area objek atau tombol di bawah');
 });
 
 document.getElementById('main-marker').addEventListener('markerLost', function() {
+  tapZones.classList.remove('active');
   arButtons.classList.remove('visible');
   scanHint.style.display = '';
   headerSub.textContent = 'Arahkan kamera ke marker Hiro';
 });
+
+/* ── TAP ZONE handler ────────────────────────────── */
+function tapZone(modalId, e) {
+  // Koordinat tap untuk posisi ripple
+  var cx = e.touches ? e.touches[0].clientX : e.clientX;
+  var cy = e.touches ? e.touches[0].clientY : e.clientY;
+  var size = 120;
+
+  var r = document.createElement('div');
+  r.className = 'ripple';
+  r.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(cx-size/2)+'px;top:'+(cy-size/2)+'px;';
+  document.body.appendChild(r);
+
+  setTimeout(function() {
+    r.remove();
+    openModal(modalId);
+  }, 280);
+}
 
 updateProgressBar();
 </script>

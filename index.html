@@ -267,17 +267,29 @@
     <a-light type="ambient"     color="#ffffff" intensity="0.8"></a-light>
     <a-light type="directional" position="1 2 1" color="#ffffff" intensity="0.5"></a-light>
 
-    <!-- Satu-satunya camera entity — jangan tambah <a-camera-static> -->
+    <!-- Camera dengan ring visual (fuse sebagai fallback gaze) -->
     <a-entity camera>
       <a-cursor
+        id="gaze-cursor"
         fuse="true"
         fuse-timeout="1500"
         color="#00bcd4"
-        opacity="0.9"
+        opacity="0.8"
         raycaster="objects: .clickable; recursive: true"
-        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
         geometry="primitive: ring; radiusInner: 0.018; radiusOuter: 0.028">
       </a-cursor>
+    </a-entity>
+
+    <!--
+      Touch/mouse cursor — HARUS di luar camera entity.
+      rayOrigin: mouse membuat cursor cast ray dari posisi tap di layar,
+      bukan dari tengah layar. Inilah yang membuat tap langsung ke objek bekerja.
+      Cursor ini menangani: klik mouse (desktop) + tap (mobile).
+    -->
+    <a-entity
+      id="mouse-cursor"
+      cursor="fuse: false; rayOrigin: mouse"
+      raycaster="objects: .clickable; recursive: true">
     </a-entity>
 
   </a-scene>
@@ -311,36 +323,47 @@
   </div>
 
   <script>
-    // ── Hover & click color change untuk objek AR ─────────────────────
-    const OBJECTS = [
-      { id: 'book',      bodyId: 'book-body',   normal: '#e53935', hover: '#ff6659' },
-      { id: 'poster',    bodyId: 'poster-body', normal: '#1565c0', hover: '#42a5f5' },
-      { id: 'quiz-btn',  bodyId: 'quiz-body',   normal: '#00897b', hover: '#4db6ac' },
-    ];
-
+    // ── ar-interactive component ──────────────────────────────────────
+    // Menangani hover (warna berubah) dan click/tap (navigasi ke halaman).
+    // Event 'click' diterima dari DUA sumber:
+    //   1. mouse-cursor (rayOrigin: mouse) — ketika tap mengenai objek
+    //   2. gaze-cursor (fuse) — setelah tatap 1.5 detik (fallback)
     AFRAME.registerComponent('ar-interactive', {
-      schema: { target: { type: 'string' }, normalColor: { type: 'string' }, hoverColor: { type: 'string' } },
+      schema: {
+        target:      { type: 'string' },
+        normalColor: { type: 'string' },
+        hoverColor:  { type: 'string' }
+      },
       init: function () {
-        const el = this.el;
-        const d  = this.data;
+        var el = this.el;
+        var d  = this.data;
+
+        function getBody() {
+          return el.querySelector('[id$="-body"]');
+        }
+
         el.addEventListener('mouseenter', function () {
-          el.querySelector('[id$="-body"]') &&
-            el.querySelector('[id$="-body"]').setAttribute('material', 'color', d.hoverColor);
+          var body = getBody();
+          if (body) body.setAttribute('material', 'color', d.hoverColor);
           el.setAttribute('scale', '1.12 1.12 1.12');
-          showToast('Tahan pandangan untuk membuka ' + d.target.replace('.html','').toUpperCase());
+          showToast('Tap untuk membuka ' + d.target.replace('.html', '').toUpperCase());
         });
+
         el.addEventListener('mouseleave', function () {
-          el.querySelector('[id$="-body"]') &&
-            el.querySelector('[id$="-body"]').setAttribute('material', 'color', d.normalColor);
+          var body = getBody();
+          if (body) body.setAttribute('material', 'color', d.normalColor);
           el.setAttribute('scale', '1 1 1');
         });
+
+        // 'click' mencakup: tap via mouse-cursor + fuse gaze + klik mouse desktop
         el.addEventListener('click', function () {
-          window.location.href = d.target;
+          showToast('Membuka ' + d.target.replace('.html', '').toUpperCase() + '...');
+          setTimeout(function () { window.location.href = d.target; }, 250);
         });
       }
     });
 
-    // Pasang komponen setelah scene selesai load
+    // ── Pasang ar-interactive setelah scene load ──────────────────────
     document.querySelector('a-scene').addEventListener('loaded', function () {
       document.getElementById('book').setAttribute('ar-interactive',
         'target: slides.html; normalColor: #e53935; hoverColor: #ff6659');
@@ -348,34 +371,55 @@
         'target: video.html; normalColor: #1565c0; hoverColor: #42a5f5');
       document.getElementById('quiz-btn').setAttribute('ar-interactive',
         'target: quiz.html; normalColor: #00897b; hoverColor: #4db6ac');
+
+      // ── Touch → Click bridge ────────────────────────────────────────
+      // Beberapa browser mobile (terutama WebView Android) menunda atau
+      // memblokir synthetic 'click' setelah 'touchend'. Bridge ini
+      // mengkonversi 'touchstart' menjadi MouseEvent 'click' secara langsung
+      // pada koordinat tap yang sama, sehingga mouse-cursor bisa memprosesnya.
+      var canvas = document.querySelector('canvas.a-canvas');
+      if (!canvas) canvas = document.querySelector('canvas');
+      if (canvas) {
+        canvas.addEventListener('touchstart', function (e) {
+          if (e.touches.length !== 1) return;
+          e.preventDefault();
+          var t = e.touches[0];
+          canvas.dispatchEvent(new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            clientX: t.clientX,
+            clientY: t.clientY
+          }));
+        }, { passive: false });
+      }
     });
 
-    // ── Toast ───────────────────────────────────────────────────────────
+    // ── Toast ─────────────────────────────────────────────────────────
     function showToast(msg) {
-      const t = document.getElementById('toast');
+      var t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.add('show');
       clearTimeout(t._tid);
-      t._tid = setTimeout(() => t.classList.remove('show'), 2200);
+      t._tid = setTimeout(function () { t.classList.remove('show'); }, 2200);
     }
 
-    // ── Progress bar ────────────────────────────────────────────────────
-    (function updateProgress() {
-      const done = [
+    // ── Progress bar ──────────────────────────────────────────────────
+    (function () {
+      var done = [
         localStorage.getItem('slides_session_3_done') === 'true',
         localStorage.getItem('video_session_3_done')  === 'true',
-        localStorage.getItem('quiz_session_3_done')   === 'true',
+        localStorage.getItem('quiz_session_3_done')   === 'true'
       ].filter(Boolean).length;
       document.getElementById('progress-fill').style.width = (done / 3 * 100) + '%';
     })();
 
-    // ── Marker events ───────────────────────────────────────────────────
-    const marker    = document.getElementById('main-marker');
-    const scanHint  = document.getElementById('scan-hint');
+    // ── Marker events ─────────────────────────────────────────────────
+    var marker   = document.getElementById('main-marker');
+    var scanHint = document.getElementById('scan-hint');
 
     marker.addEventListener('markerFound', function () {
       scanHint.style.display = 'none';
-      showToast('Meja AR terdeteksi! Tahan pandangan ke objek untuk membuka');
+      showToast('Meja AR terdeteksi! Tap objek untuk membuka');
     });
 
     marker.addEventListener('markerLost', function () {

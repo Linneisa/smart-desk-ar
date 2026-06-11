@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Desk AR - Video Pembelajaran</title>
+  <style>
+    :root {
+      --primary: #1a237e;
+      --secondary: #0d47a1;
+      --accent: #00bcd4;
+      --accent2: #0097a7;
+      --bg: #0a0e27;
+      --card: #111638;
+      --text: #e8eaf6;
+      --text-muted: #90a4ae;
+      --success: #00e676;
+      --warning: #ffd740;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .back-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.25); }
+
+    .header-title h1 { font-size: 17px; font-weight: 700; }
+    .header-title p { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+    .header-badge {
+      margin-left: auto;
+      background: rgba(0,188,212,0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Session tabs */
+    .session-tabs {
+      display: flex;
+      padding: 16px 20px 0;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .session-tabs::-webkit-scrollbar { display: none; }
+
+    .session-tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .session-tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .session-tab.locked { opacity: 0.5; cursor: not-allowed; }
+
+    /* Overall progress */
+    .overall-progress {
+      margin: 16px 20px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-outer {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #26c6da);
+      border-radius: 10px;
+      transition: width 0.6s ease;
+    }
+
+    /* Prerequisite notice */
+    .prereq-notice {
+      margin: 16px 20px;
+      background: rgba(255,215,64,0.08);
+      border: 1px solid rgba(255,215,64,0.3);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .prereq-notice .icon { font-size: 20px; flex-shrink: 0; }
+    .prereq-notice p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .prereq-notice p strong { color: var(--warning); }
+    .prereq-notice a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* Video card */
+    .video-section {
+      padding: 20px;
+    }
+
+    .video-card {
+      background: var(--card);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(0,188,212,0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      margin-bottom: 16px;
+    }
+
+    .video-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+    }
+
+    .video-lock-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 14, 39, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .video-lock-overlay .lock-icon { font-size: 48px; }
+    .video-lock-overlay h3 { font-size: 16px; color: white; }
+    .video-lock-overlay p { font-size: 12px; color: var(--text-muted); text-align: center; padding: 0 20px; }
+    .video-lock-overlay a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(0,188,212,0.1);
+      border: 1px solid rgba(0,188,212,0.3);
+      padding: 8px 20px;
+      border-radius: 20px;
+    }
+
+    .video-info {
+      padding: 16px 20px;
+    }
+
+    .video-session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,188,212,0.1);
+      border: 1px solid rgba(0,188,212,0.3);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .video-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .video-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .video-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .meta-chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Learning points */
+    .learning-points {
+      background: rgba(0,188,212,0.05);
+      border: 1px solid rgba(0,188,212,0.15);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .learning-points h4 {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .learning-points ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .learning-points ul li {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding-left: 20px;
+      position: relative;
+      line-height: 1.4;
+    }
+
+    .learning-points ul li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    /* Done button */
+    .done-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(0,188,212,0.3);
+    }
+
+    .done-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,188,212,0.4); }
+
+    .done-btn.completed {
+      background: linear-gradient(135deg, rgba(0,230,118,0.2), rgba(0,188,212,0.2));
+      border: 1px solid var(--success);
+      color: var(--success);
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .done-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Navigate to next session */
+    .nav-row {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px 24px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 13px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: 1px solid rgba(0,188,212,0.3);
+    }
+
+    .btn-quiz {
+      background: linear-gradient(135deg, #00e676, #00c853);
+      color: #1a237e;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      white-space: nowrap;
+      border: 1px solid rgba(0,188,212,0.3);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .video-section { animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="index.html" class="back-btn">←</a>
+    <div class="header-title">
+      <h1>🎬 Video Pembelajaran</h1>
+      <p>Augmented Reality Video</p>
+    </div>
+    <div class="header-badge" id="progress-badge">0/3</div>
+  </div>
+
+  <div class="session-tabs" id="session-tabs"></div>
+
+  <div class="overall-progress">
+    <div class="progress-label">
+      <span>Progress Video</span>
+      <span id="progress-text">0%</span>
+    </div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="prereq-area"></div>
+  <div id="video-area"></div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const VIDEOS = [
+  {
+    id: 1,
+    title: "Pengenalan Augmented Reality - Apa itu AR?",
+    youtubeId: "vz0UuCrW3TA",
+    sessionLabel: "Sesi 1: Pengenalan AR",
+    icon: "🌐",
+    duration: "±15 menit",
+    level: "Pemula",
+    desc: "Video ini membahas pengenalan lengkap tentang Augmented Reality: definisi, sejarah perkembangan, dan perbedaan mendasar antara AR, VR, dan Mixed Reality.",
+    points: [
+      "Memahami definisi dan konsep dasar AR",
+      "Mengetahui sejarah perkembangan AR dari 1968 hingga kini",
+      "Membedakan AR, VR, dan Mixed Reality",
+      "Contoh nyata aplikasi AR di kehidupan sehari-hari"
+    ]
+  },
+  {
+    id: 2,
+    title: "Cara Kerja Augmented Reality - Teknologi di Balik AR",
+    youtubeId: "WxzcD04is3E",
+    sessionLabel: "Sesi 2: Cara Kerja AR",
+    icon: "⚙️",
+    duration: "±20 menit",
+    level: "Menengah",
+    desc: "Pelajari teknologi di balik AR: marker-based tracking, SLAM, computer vision, dan bagaimana smartphone modern mengolah data untuk menciptakan pengalaman AR yang mulus.",
+    points: [
+      "Cara kerja marker-based dan markerless AR",
+      "Teknologi computer vision dalam AR",
+      "Peran sensor IMU, kamera, dan GPS",
+      "Framework AR populer: ARKit, ARCore, AR.js"
+    ]
+  },
+  {
+    id: 3,
+    title: "Aplikasi AR di Dunia Nyata - Pendidikan, Kesehatan & Industri",
+    youtubeId: "1t1gBVykneA",
+    sessionLabel: "Sesi 3: Aplikasi AR",
+    icon: "🚀",
+    duration: "±18 menit",
+    level: "Lanjutan",
+    desc: "Eksplorasi nyata penerapan AR di berbagai bidang: transformasi pendidikan, revolusi medis, otomasi industri, dan peluang karir di bidang AR development.",
+    points: [
+      "AR di bidang pendidikan: buku interaktif dan laboratorium virtual",
+      "AR di kesehatan: panduan operasi dan rehabilitasi",
+      "AR di industri manufaktur dan retail",
+      "Tren dan masa depan AR: Spatial Computing"
+    ]
+  }
+];
+
+let currentSession = 0;
+
+function getProgress() {
+  return {
+    slideDone: localStorage.getItem('slides_session_3_done') === 'true',
+    v1: localStorage.getItem('video_session_1_done') === 'true',
+    v2: localStorage.getItem('video_session_2_done') === 'true',
+    v3: localStorage.getItem('video_session_3_done') === 'true'
+  };
+}
+
+function isSessionUnlocked(idx) {
+  if (!getProgress().slideDone) return false;
+  if (idx === 0) return true;
+  const p = getProgress();
+  if (idx === 1) return p.v1;
+  if (idx === 2) return p.v2;
+  return false;
+}
+
+function renderTabs() {
+  const p = getProgress();
+  const tabs = document.getElementById('session-tabs');
+  tabs.innerHTML = '';
+  VIDEOS.forEach((v, i) => {
+    const unlocked = isSessionUnlocked(i);
+    const done = p['v' + (i+1)];
+    const div = document.createElement('div');
+    div.className = `session-tab ${i === currentSession ? 'active' : ''} ${!unlocked ? 'locked' : ''}`;
+    div.innerHTML = `${v.icon} Sesi ${v.id} ${done ? '✅' : (!unlocked ? '🔒' : '')}`;
+    div.onclick = () => {
+      if (!unlocked) {
+        showToast(getProgress().slideDone ? 'Selesaikan video sebelumnya!' : 'Selesaikan slides dulu!');
+        return;
+      }
+      currentSession = i;
+      render();
+    };
+    tabs.appendChild(div);
+  });
+}
+
+function renderPrereq() {
+  const area = document.getElementById('prereq-area');
+  if (!getProgress().slideDone) {
+    area.innerHTML = `
+      <div class="prereq-notice">
+        <span class="icon">⚠️</span>
+        <p><strong>Selesaikan Slides Dulu!</strong><br>
+        Video ini terkunci. Kamu perlu menyelesaikan semua sesi slides materi sebelum menonton video.<br>
+        <a href="slides.html">→ Buka Slides Materi</a></p>
+      </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+function renderVideo() {
+  const p = getProgress();
+  const v = VIDEOS[currentSession];
+  const unlocked = isSessionUnlocked(currentSession);
+  const done = p['v' + (currentSession+1)];
+
+  const area = document.getElementById('video-area');
+  area.innerHTML = `
+    <div class="video-section">
+      <div class="video-card">
+        <div class="video-wrapper">
+          ${unlocked
+            ? `<iframe src="https://www.youtube.com/embed/${v.youtubeId}?rel=0&modestbranding=1" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>`
+            : `<div class="video-lock-overlay">
+                <div class="lock-icon">🔒</div>
+                <h3>Video Terkunci</h3>
+                <p>${p.slideDone ? 'Selesaikan video sesi sebelumnya untuk membuka sesi ini.' : 'Selesaikan semua slides materi terlebih dahulu.'}</p>
+                <a href="${p.slideDone ? '#' : 'slides.html'}">${p.slideDone ? 'Tonton dari Sesi 1' : '→ Buka Slides'}</a>
+              </div>`
+          }
+        </div>
+        <div class="video-info">
+          <div class="video-session-badge">${v.icon} ${v.sessionLabel}</div>
+          <div class="video-title">${v.title}</div>
+          <div class="video-meta">
+            <div class="meta-chip">⏱ ${v.duration}</div>
+            <div class="meta-chip">📊 ${v.level}</div>
+            <div class="meta-chip">🎓 AR Learning</div>
+          </div>
+          <div class="video-desc">${v.desc}</div>
+          <div class="learning-points">
+            <h4>Yang Akan Dipelajari</h4>
+            <ul>${v.points.map(p => `<li>${p}</li>`).join('')}</ul>
+          </div>
+          ${unlocked
+            ? (done
+                ? `<button class="done-btn completed" disabled>✅ Sudah Ditandai Selesai</button>`
+                : `<button class="done-btn" id="done-btn" onclick="markDone()">✅ Tandai Selesai Menonton</button>`
+              )
+            : ''
+          }
+        </div>
+      </div>
+
+      ${done ? `
+      <div class="nav-row">
+        ${currentSession < 2
+          ? `<button class="nav-btn btn-primary" onclick="goNextSession()">Video Berikutnya →</button>`
+          : `<button class="nav-btn btn-quiz" onclick="window.location.href='quiz.html'">🎯 Mulai Kuis →</button>`
+        }
+      </div>` : ''}
+    </div>
+  `;
+
+  // Update progress
+  const pCount = [p.v1, p.v2, p.v3].filter(Boolean).length;
+  const pct = Math.round(pCount / 3 * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = pct + '%';
+  document.getElementById('progress-badge').textContent = pCount + '/3';
+}
+
+function markDone() {
+  localStorage.setItem('video_session_' + (currentSession+1) + '_done', 'true');
+  showToast('✅ Video sesi ' + (currentSession+1) + ' selesai ditonton!');
+  render();
+}
+
+function goNextSession() {
+  if (currentSession < 2) {
+    currentSession++;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function render() {
+  renderTabs();
+  renderPrereq();
+  renderVideo();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+render();
+</script>
+</body>
+</html>

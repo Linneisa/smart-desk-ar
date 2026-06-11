@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Smart Desk AR</title>
+
+  <!-- A-Frame 1.3.0 + AR.js 3.4.0 — verified compatible pair for marker-based AR -->
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.0/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: #000;
+    }
+
+    /* a-scene must fill the viewport when using embedded */
+    a-scene {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+
+    /* Ensure AR.js video feed fills screen correctly */
+    .a-canvas {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ── UI OVERLAY ─────────────────────────────────── */
+    #ui-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    #header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #1a237ecc, #00bcd4cc);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    #header .logo {
+      width: 36px; height: 36px;
+      background: white;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    #header h1 { color: white; font-size: 18px; font-weight: 700; }
+    #header p  { color: rgba(255,255,255,0.8); font-size: 11px; }
+
+    #scan-hint {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(26,35,126,0.85);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 30px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,188,212,0.4);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #scan-hint .scan-icon {
+      font-size: 28px;
+      display: block;
+      margin-bottom: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    #scan-hint p { font-size: 13px; }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50%      { transform: scale(1.1); opacity: 0.7; }
+    }
+
+    /* Viewfinder corner brackets */
+    #corner-frame {
+      position: absolute;
+      top: 70px; left: 20px; right: 20px; bottom: 80px;
+      pointer-events: none;
+    }
+    #corner-frame::before, #corner-frame::after,
+    #corner-frame .c2::before, #corner-frame .c2::after {
+      content: '';
+      position: absolute;
+      width: 30px; height: 30px;
+      border-color: #00bcd4;
+      border-style: solid;
+    }
+    #corner-frame::before { top:0;    left:0;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    #corner-frame::after  { bottom:0; right:0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    #corner-frame .c2::before { top:0;    right:0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    #corner-frame .c2::after  { bottom:0; left:0;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+
+    #progress-bar {
+      position: absolute;
+      top: 64px; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+    }
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00bcd4, #1a237e);
+      width: 0%;
+      transition: width 1s ease;
+    }
+
+    #toast {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      border: 1px solid rgba(0,188,212,0.4);
+    }
+    #toast.show { opacity: 1; }
+
+    #menu-panel {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #1a237eee, #0d47a1ee);
+      backdrop-filter: blur(15px);
+      padding: 16px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      border-top: 1px solid rgba(0,188,212,0.3);
+      pointer-events: all;
+    }
+
+    .menu-btn {
+      flex: 1;
+      max-width: 100px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(0,188,212,0.4);
+      color: white;
+      padding: 10px 8px;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .menu-btn:active { background: rgba(0,188,212,0.3); border-color: #00bcd4; }
+    .menu-btn .icon { font-size: 20px; }
+    .menu-btn span  { font-size: 10px; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!--
+    AR.js + A-Frame scene.
+    Rules that must be followed:
+    • embedded   — renders into the page (not fullscreen VR)
+    • arjs        — only sourceType + debugUIEnabled; no detectionMode/matrixCodeType
+                   (those are for QR/matrix barcodes, they BREAK Hiro pattern detection)
+    • NO renderer="logarithmicDepthBuffer" — known to break AR.js geometry rendering
+    • ONE camera entity: <a-entity camera> as direct child of a-scene
+    • NO <a-camera-static> — that creates a second, conflicting camera
+  -->
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+    vr-mode-ui="enabled: false"
+    loading-screen="enabled: false"
+  >
+
+    <!-- ── HIRO MARKER ─────────────────────────────── -->
+    <a-marker preset="hiro" id="main-marker">
+
+      <!-- Test box — must appear immediately above the marker when working -->
+      <a-box position="0 0.5 0" material="color: red;"></a-box>
+
+      <!-- ── MEJA VIRTUAL ──────────────────────────── -->
+      <!-- Permukaan -->
+      <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4" color="#1a237e"></a-box>
+      <!-- Kaki -->
+      <a-box position="-0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+      <a-box position=" 0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+      <a-box position="-0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+      <a-box position=" 0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
+      <!-- Garis aksen -->
+      <a-box position="0 0.645 0" width="2.22" height="0.01" depth="1.42" color="#00bcd4" opacity="0.6"></a-box>
+
+      <!-- ── OBJEK 1: BUKU → slides.html ────────────── -->
+      <a-entity id="book" position="-0.7 0.8 0" class="clickable" data-target="slides.html">
+        <!-- Hitbox transparan untuk raycaster -->
+        <a-box width="0.35" height="0.45" depth="0.12" opacity="0" color="white"></a-box>
+        <!-- Visual -->
+        <a-box id="book-body" width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
+        <a-box position="0.02 0 0.04"   width="0.22" height="0.29" depth="0.01" color="#fff9c4"></a-box>
+        <a-box position="0.02 0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+        <a-box position="0.02 0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+        <a-box position="0.02 -0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+        <a-text value="SLIDES" position="0 -0.26 0" align="center" color="white"  width="1.5"></a-text>
+        <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
+      </a-entity>
+
+      <!-- ── OBJEK 2: POSTER → video.html ─────────── -->
+      <a-entity id="poster" position="0 0.8 0" class="clickable" data-target="video.html">
+        <!-- Hitbox -->
+        <a-box width="0.36" height="0.48" depth="0.1" opacity="0" color="white"></a-box>
+        <!-- Visual -->
+        <a-box id="poster-body" width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
+        <a-box position="0 0 0.02"  width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
+        <a-cone position="0 0 0.03" rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
+        <a-text value="VIDEO" position="0 -0.26 0" align="center" color="white"  width="1.5"></a-text>
+        <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
+      </a-entity>
+
+      <!-- ── OBJEK 3: KUIS → quiz.html ─────────────── -->
+      <a-entity id="quiz-btn" position="0.7 0.8 0" class="clickable" data-target="quiz.html">
+        <!-- Hitbox -->
+        <a-box width="0.36" height="0.36" depth="0.16" opacity="0" color="white"></a-box>
+        <!-- Visual -->
+        <a-cylinder id="quiz-body" radius="0.14" height="0.08" color="#00897b"></a-cylinder>
+        <a-text value="?" position="0 0.12 0" align="center" color="white"  width="1.8"></a-text>
+        <a-text value="KUIS" position="0 -0.22 0" align="center" color="white"  width="1.5"></a-text>
+        <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
+      </a-entity>
+
+      <!-- Label meja -->
+      <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
+
+      <!-- Lampu lokal di meja -->
+      <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.4"></a-light>
+
+    </a-marker>
+
+    <!-- Pencahayaan global -->
+    <a-light type="ambient"     color="#ffffff" intensity="0.8"></a-light>
+    <a-light type="directional" position="1 2 1" color="#ffffff" intensity="0.5"></a-light>
+
+    <!--
+      Camera: satu-satunya camera entity.
+      JANGAN pakai <a-camera-static> — itu membuat kamera duplikat yang konflik dengan AR.js.
+      Cursor fuse digunakan agar bisa klik tanpa touchscreen (gaze-based).
+    -->
+    <a-entity camera>
+      <a-cursor
+        fuse="true"
+        fuse-timeout="1500"
+        color="#00bcd4"
+        opacity="0.9"
+        raycaster="objects: .clickable; recursive: true"
+        animation__click="property: scale; startEvents: click; from: 0.1 0.1 0.1; to: 1 1 1; dur: 150"
+        geometry="primitive: ring; radiusInner: 0.018; radiusOuter: 0.028">
+      </a-cursor>
+    </a-entity>
+
+  </a-scene>
+
+  <!-- ── UI OVERLAY (z-index 999, di atas canvas AR) ── -->
+  <div id="ui-overlay">
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+
+    <div id="header">
+      <div class="logo">🎯</div>
+      <div>
+        <h1>Smart Desk AR</h1>
+        <p>Arahkan kamera ke marker Hiro</p>
+      </div>
+    </div>
+
+    <div id="corner-frame"><div class="c2" style="position:absolute;inset:0;"></div></div>
+
+    <div id="scan-hint">
+      <span class="scan-icon">📷</span>
+      <p>Scan marker Hiro untuk melihat meja virtual</p>
+    </div>
+
+    <div id="toast"></div>
+
+    <div id="menu-panel">
+      <a href="slides.html" class="menu-btn"><span class="icon">📚</span><span>SLIDES</span></a>
+      <a href="video.html"  class="menu-btn"><span class="icon">🎬</span><span>VIDEO</span></a>
+      <a href="quiz.html"   class="menu-btn"><span class="icon">🎯</span><span>KUIS</span></a>
+    </div>
+  </div>
+
+  <script>
+    // ── Hover & click color change untuk objek AR ─────────────────────
+    const OBJECTS = [
+      { id: 'book',      bodyId: 'book-body',   normal: '#e53935', hover: '#ff6659' },
+      { id: 'poster',    bodyId: 'poster-body', normal: '#1565c0', hover: '#42a5f5' },
+      { id: 'quiz-btn',  bodyId: 'quiz-body',   normal: '#00897b', hover: '#4db6ac' },
+    ];
+
+    AFRAME.registerComponent('ar-interactive', {
+      schema: { target: { type: 'string' }, normalColor: { type: 'string' }, hoverColor: { type: 'string' } },
+      init: function () {
+        const el = this.el;
+        const d  = this.data;
+        el.addEventListener('mouseenter', function () {
+          el.querySelector('[id$="-body"]') &&
+            el.querySelector('[id$="-body"]').setAttribute('material', 'color', d.hoverColor);
+          el.setAttribute('scale', '1.12 1.12 1.12');
+          showToast('Tahan pandangan untuk membuka ' + d.target.replace('.html','').toUpperCase());
+        });
+        el.addEventListener('mouseleave', function () {
+          el.querySelector('[id$="-body"]') &&
+            el.querySelector('[id$="-body"]').setAttribute('material', 'color', d.normalColor);
+          el.setAttribute('scale', '1 1 1');
+        });
+        el.addEventListener('click', function () {
+          window.location.href = d.target;
+        });
+      }
+    });
+
+    // Pasang komponen setelah scene selesai load
+    document.querySelector('a-scene').addEventListener('loaded', function () {
+      document.getElementById('book').setAttribute('ar-interactive',
+        'target: slides.html; normalColor: #e53935; hoverColor: #ff6659');
+      document.getElementById('poster').setAttribute('ar-interactive',
+        'target: video.html; normalColor: #1565c0; hoverColor: #42a5f5');
+      document.getElementById('quiz-btn').setAttribute('ar-interactive',
+        'target: quiz.html; normalColor: #00897b; hoverColor: #4db6ac');
+    });
+
+    // ── Toast ───────────────────────────────────────────────────────────
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(t._tid);
+      t._tid = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // ── Progress bar ────────────────────────────────────────────────────
+    (function updateProgress() {
+      const done = [
+        localStorage.getItem('slides_session_3_done') === 'true',
+        localStorage.getItem('video_session_3_done')  === 'true',
+        localStorage.getItem('quiz_session_3_done')   === 'true',
+      ].filter(Boolean).length;
+      document.getElementById('progress-fill').style.width = (done / 3 * 100) + '%';
+    })();
+
+    // ── Marker events ───────────────────────────────────────────────────
+    const marker    = document.getElementById('main-marker');
+    const scanHint  = document.getElementById('scan-hint');
+
+    marker.addEventListener('markerFound', function () {
+      scanHint.style.display = 'none';
+      showToast('Meja AR terdeteksi! Tahan pandangan ke objek untuk membuka');
+    });
+
+    marker.addEventListener('markerLost', function () {
+      scanHint.style.display = 'block';
+    });
+  </script>
+</body>
+</html>

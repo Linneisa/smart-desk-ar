@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Desk AR - Kuis</title>
+  <style>
+    :root {
+      --primary: #1a237e;
+      --secondary: #0d47a1;
+      --accent: #00bcd4;
+      --accent2: #0097a7;
+      --bg: #0a0e27;
+      --card: #111638;
+      --text: #e8eaf6;
+      --text-muted: #90a4ae;
+      --success: #00e676;
+      --error: #ff5252;
+      --warning: #ffd740;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .back-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.25); }
+
+    .header-title h1 { font-size: 17px; font-weight: 700; }
+    .header-title p { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+    .header-badge {
+      margin-left: auto;
+      background: rgba(0,188,212,0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .session-tabs {
+      display: flex;
+      padding: 16px 20px 0;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .session-tabs::-webkit-scrollbar { display: none; }
+
+    .session-tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .session-tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .session-tab.locked { opacity: 0.5; cursor: not-allowed; }
+
+    .overall-progress {
+      margin: 16px 20px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-outer {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #26c6da);
+      border-radius: 10px;
+      transition: width 0.6s ease;
+    }
+
+    .prereq-notice {
+      margin: 16px 20px;
+      background: rgba(255,215,64,0.08);
+      border: 1px solid rgba(255,215,64,0.3);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .prereq-notice .icon { font-size: 20px; flex-shrink: 0; }
+    .prereq-notice p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .prereq-notice p strong { color: var(--warning); }
+    .prereq-notice a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+    /* Quiz area */
+    .quiz-area { padding: 20px; }
+
+    /* Score card */
+    .score-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .score-item {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .score-item .value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .score-item .label {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid rgba(0,188,212,0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .question-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .q-badge {
+      background: rgba(0,188,212,0.1);
+      border: 1px solid rgba(0,188,212,0.3);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .q-progress {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .question-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: white;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    /* Options */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(0,188,212,0.08);
+    }
+
+    .option-btn.selected {
+      border-color: var(--accent);
+      background: rgba(0,188,212,0.15);
+      color: white;
+    }
+
+    .option-btn.correct {
+      border-color: var(--success);
+      background: rgba(0,230,118,0.1);
+      color: var(--success);
+    }
+
+    .option-btn.wrong {
+      border-color: var(--error);
+      background: rgba(255,82,82,0.1);
+      color: var(--error);
+    }
+
+    .option-letter {
+      width: 26px; height: 26px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Explanation */
+    .explanation {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .explanation.correct-exp {
+      background: rgba(0,230,118,0.08);
+      border: 1px solid rgba(0,230,118,0.2);
+      color: #80e27e;
+    }
+
+    .explanation.wrong-exp {
+      background: rgba(255,82,82,0.08);
+      border: 1px solid rgba(255,82,82,0.2);
+      color: #ff8a80;
+    }
+
+    /* Quiz navigation */
+    .quiz-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .quiz-nav-btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      box-shadow: 0 4px 15px rgba(0,188,212,0.3);
+    }
+
+    .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+    .btn-next-q {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: 1px solid rgba(0,188,212,0.3);
+    }
+
+    .btn-prev-q {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Result screen */
+    .result-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      border: 1px solid rgba(0,188,212,0.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+    }
+
+    .result-emoji { font-size: 56px; margin-bottom: 16px; }
+
+    .result-card h2 { font-size: 22px; font-weight: 800; color: white; margin-bottom: 8px; }
+    .result-card p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+
+    .result-score {
+      background: linear-gradient(135deg, rgba(0,188,212,0.15), rgba(26,35,126,0.3));
+      border: 1px solid rgba(0,188,212,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .result-score .big-score {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .result-score .score-label { font-size: 13px; color: var(--text-muted); }
+
+    /* Wrong answers list */
+    .wrong-list {
+      background: rgba(255,82,82,0.06);
+      border: 1px solid rgba(255,82,82,0.2);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .wrong-list h4 {
+      font-size: 13px;
+      color: var(--error);
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wrong-item {
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .wrong-item:last-child { border-bottom: none; }
+    .wrong-item .q-num { color: var(--error); font-weight: 700; }
+    .wrong-item .correct-ans { color: var(--success); margin-top: 4px; }
+
+    /* Action buttons */
+    .action-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-retry {
+      background: rgba(255,82,82,0.1);
+      border: 1px solid rgba(255,82,82,0.3);
+      color: var(--error);
+    }
+
+    .btn-continue {
+      background: linear-gradient(135deg, var(--success), #00c853);
+      color: #1a237e;
+      box-shadow: 0 4px 15px rgba(0,230,118,0.3);
+    }
+
+    .btn-finish-all {
+      background: linear-gradient(135deg, #ffd740, #ffc400);
+      color: #1a237e;
+      box-shadow: 0 4px 15px rgba(255,215,64,0.3);
+    }
+
+    /* Locked screen */
+    .locked-screen {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 20px;
+    }
+    .locked-screen .lock { font-size: 52px; margin-bottom: 16px; }
+    .locked-screen h3 { font-size: 18px; color: white; margin-bottom: 8px; }
+    .locked-screen p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+    .locked-screen a {
+      display: inline-block;
+      color: var(--accent);
+      text-decoration: none;
+      background: rgba(0,188,212,0.1);
+      border: 1px solid rgba(0,188,212,0.3);
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      white-space: nowrap;
+      border: 1px solid rgba(0,188,212,0.3);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .quiz-area { animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="index.html" class="back-btn">←</a>
+    <div class="header-title">
+      <h1>🎯 Kuis AR</h1>
+      <p>Uji Pengetahuanmu</p>
+    </div>
+    <div class="header-badge" id="progress-badge">0/3</div>
+  </div>
+
+  <div class="session-tabs" id="session-tabs"></div>
+
+  <div class="overall-progress">
+    <div class="progress-label">
+      <span>Progress Kuis</span>
+      <span id="progress-text">0%</span>
+    </div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="prereq-area"></div>
+  <div id="quiz-content"></div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const QUIZZES = [
+  {
+    id: 1,
+    title: "Pengenalan AR",
+    icon: "🌐",
+    questions: [
+      {
+        q: "Apa kepanjangan dari AR dalam konteks teknologi?",
+        options: ["Artificial Reality", "Augmented Reality", "Automated Rendering", "Adaptive Resolution"],
+        answer: 1,
+        exp: "AR adalah singkatan dari Augmented Reality, teknologi yang menambahkan elemen digital ke dunia nyata."
+      },
+      {
+        q: "Siapa yang pertama kali memperkenalkan istilah 'Augmented Reality' pada tahun 1992?",
+        options: ["Ivan Sutherland", "Mark Zuckerberg", "Tom Caudell", "Tim Berners-Lee"],
+        answer: 2,
+        exp: "Tom Caudell, peneliti Boeing, memperkenalkan istilah 'Augmented Reality' pada 1992 untuk sistem panduan perakitan pesawat."
+      },
+      {
+        q: "Apa perbedaan utama antara AR dan VR?",
+        options: [
+          "AR lebih mahal dari VR",
+          "VR menambahkan elemen digital ke dunia nyata",
+          "AR menambahkan elemen digital ke dunia nyata, VR menggantikan dunia nyata sepenuhnya",
+          "AR dan VR adalah teknologi yang sama"
+        ],
+        answer: 2,
+        exp: "AR (Augmented Reality) menambahkan elemen digital ke dunia nyata, sementara VR (Virtual Reality) menciptakan lingkungan sepenuhnya virtual."
+      },
+      {
+        q: "Aplikasi mana yang mempopulerkan AR di kalangan umum pada tahun 2016?",
+        options: ["Instagram Stories", "Pokemon Go", "Google Maps", "Snapchat"],
+        answer: 1,
+        exp: "Pokemon Go (2016) menjadi fenomena global yang memperkenalkan AR kepada ratusan juta pengguna smartphone."
+      },
+      {
+        q: "Menurut Milgram's Reality-Virtuality Continuum, di mana posisi AR?",
+        options: [
+          "Di posisi paling ujung virtual",
+          "Di antara real environment dan virtual environment, lebih dekat ke real",
+          "Sama persis dengan Virtual Environment",
+          "Di luar spektrum nyata-virtual"
+        ],
+        answer: 1,
+        exp: "Dalam Milgram's Continuum, AR berada antara Real Environment dan Virtual Environment, lebih condong ke dunia nyata karena mempertahankan pandangan dunia nyata."
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "Cara Kerja AR",
+    icon: "⚙️",
+    questions: [
+      {
+        q: "Apa yang dimaksud dengan 'Marker-based AR'?",
+        options: [
+          "AR yang bekerja hanya di dalam ruangan",
+          "AR yang menggunakan gambar atau pola tertentu sebagai titik referensi",
+          "AR yang tidak memerlukan kamera",
+          "AR yang hanya bisa digunakan di perangkat Apple"
+        ],
+        answer: 1,
+        exp: "Marker-based AR menggunakan gambar atau pola spesifik (seperti marker Hiro) sebagai 'jangkar' untuk menempatkan konten digital di dunia nyata."
+      },
+      {
+        q: "Apa yang digunakan oleh AR berbasis GPS?",
+        options: [
+          "Kode QR yang dicetak",
+          "Koordinat lokasi geografis",
+          "Pengenalan wajah",
+          "Sensor cahaya"
+        ],
+        answer: 1,
+        exp: "AR berbasis GPS menggunakan koordinat lokasi (latitude/longitude) untuk menampilkan konten digital di lokasi geografis tertentu, seperti Pokemon Go."
+      },
+      {
+        q: "Manakah yang BUKAN merupakan komponen teknis AR?",
+        options: ["Kamera", "Prosesor", "Printer 3D", "Display"],
+        answer: 2,
+        exp: "Printer 3D bukan komponen AR. Komponen AR terdiri dari kamera (input), prosesor (pengolahan), dan display (output)."
+      },
+      {
+        q: "Urutan proses kerja AR yang benar adalah...",
+        options: [
+          "Render → Track → Capture → Register → Display",
+          "Capture → Track → Register → Render → Display",
+          "Display → Render → Track → Capture → Register",
+          "Track → Capture → Render → Register → Display"
+        ],
+        answer: 1,
+        exp: "Proses AR: Capture (tangkap frame) → Track (deteksi marker) → Register (hitung posisi) → Render (gambar objek 3D) → Display (tampilkan ke user)."
+      },
+      {
+        q: "Framework/library AR yang digunakan dalam proyek Smart Desk AR ini adalah...",
+        options: ["ARKit + Swift", "ARCore + Unity", "AR.js + A-Frame", "Vuforia + Unreal Engine"],
+        answer: 2,
+        exp: "Smart Desk AR menggunakan AR.js (library AR untuk web) dikombinasikan dengan A-Frame (framework 3D berbasis HTML) untuk AR berbasis browser."
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "Aplikasi AR",
+    icon: "🚀",
+    questions: [
+      {
+        q: "Apa contoh penggunaan AR di bidang pendidikan?",
+        options: [
+          "Hanya untuk membuat video game",
+          "Buku interaktif dengan animasi 3D saat di-scan",
+          "AR tidak bisa digunakan di pendidikan",
+          "Hanya untuk menonton film"
+        ],
+        answer: 1,
+        exp: "AR di pendidikan mencakup buku interaktif, laboratorium virtual, visualisasi anatomi 3D, dan aplikasi seperti Smart Desk AR ini."
+      },
+      {
+        q: "Microsoft HoloLens digunakan di bidang kesehatan untuk...",
+        options: [
+          "Hiburan gaming semata",
+          "Desain fashion dan kecantikan",
+          "Panduan operasi bedah dengan overlay informasi anatomi",
+          "Pemantauan cuaca"
+        ],
+        answer: 2,
+        exp: "Microsoft HoloLens digunakan di lebih dari 200 rumah sakit untuk panduan operasi, pelatihan dokter, dan prosedur medis dengan overlay informasi real-time."
+      },
+      {
+        q: "Aplikasi IKEA Place adalah contoh AR di industri apa?",
+        options: ["Industri penerbangan", "Retail/e-commerce furnitur", "Industri pertambangan", "Industri perbankan"],
+        answer: 1,
+        exp: "IKEA Place adalah aplikasi AR dari IKEA yang memungkinkan pembeli 'menempatkan' furnitur virtual di rumah mereka sebelum membeli, contoh nyata AR di retail."
+      },
+      {
+        q: "Apa yang dimaksud dengan 'Spatial Computing' dalam konteks masa depan AR?",
+        options: [
+          "Komputer yang hanya bekerja di luar angkasa",
+          "Komputasi yang memahami dan berinteraksi dengan ruang fisik 3D secara cerdas",
+          "Software untuk menggambar peta bintang",
+          "Teknologi penyimpanan data berbasis cloud"
+        ],
+        answer: 1,
+        exp: "Spatial Computing adalah paradigma komputasi di mana komputer memahami dan berinteraksi dengan dunia fisik tiga dimensi, dipionirkan oleh Apple Vision Pro."
+      },
+      {
+        q: "Seberapa besar estimasi pasar AR global pada tahun 2025?",
+        options: ["$50 miliar", "$100 miliar", "$198 miliar", "$500 miliar"],
+        answer: 2,
+        exp: "Pasar AR global diperkirakan mencapai $198 miliar pada 2025, didorong oleh adopsi di industri, kesehatan, pendidikan, dan consumer electronics."
+      }
+    ]
+  }
+];
+
+let currentSession = 0;
+let currentQuestion = 0;
+let answers = {};
+let submitted = false;
+
+function getProgress() {
+  return {
+    videoDone: localStorage.getItem('video_session_3_done') === 'true',
+    q1: localStorage.getItem('quiz_session_1_done') === 'true',
+    q2: localStorage.getItem('quiz_session_2_done') === 'true',
+    q3: localStorage.getItem('quiz_session_3_done') === 'true'
+  };
+}
+
+function isSessionUnlocked(idx) {
+  const p = getProgress();
+  if (!p.videoDone) return false;
+  if (idx === 0) return true;
+  if (idx === 1) return p.q1;
+  if (idx === 2) return p.q2;
+  return false;
+}
+
+function loadSessionState() {
+  const saved = localStorage.getItem('quiz_answers_' + currentSession);
+  answers = saved ? JSON.parse(saved) : {};
+  submitted = localStorage.getItem('quiz_submitted_' + currentSession) === 'true';
+  currentQuestion = 0;
+}
+
+function saveAnswers() {
+  localStorage.setItem('quiz_answers_' + currentSession, JSON.stringify(answers));
+}
+
+function renderTabs() {
+  const p = getProgress();
+  const tabs = document.getElementById('session-tabs');
+  tabs.innerHTML = '';
+  QUIZZES.forEach((q, i) => {
+    const unlocked = isSessionUnlocked(i);
+    const done = p['q' + (i+1)];
+    const div = document.createElement('div');
+    div.className = `session-tab ${i === currentSession ? 'active' : ''} ${!unlocked ? 'locked' : ''}`;
+    div.innerHTML = `${q.icon} Kuis ${q.id} ${done ? '✅' : (!unlocked ? '🔒' : '')}`;
+    div.onclick = () => {
+      if (!unlocked) {
+        showToast(p.videoDone ? 'Selesaikan kuis sebelumnya!' : 'Selesaikan video dulu!');
+        return;
+      }
+      currentSession = i;
+      loadSessionState();
+      render();
+    };
+    tabs.appendChild(div);
+  });
+}
+
+function renderPrereq() {
+  const area = document.getElementById('prereq-area');
+  const p = getProgress();
+  if (!p.videoDone) {
+    area.innerHTML = `
+      <div class="prereq-notice">
+        <span class="icon">⚠️</span>
+        <p><strong>Selesaikan Video Dulu!</strong><br>
+        Kuis ini terkunci. Tonton semua video pembelajaran terlebih dahulu.<br>
+        <a href="video.html">→ Buka Halaman Video</a></p>
+      </div>`;
+  } else {
+    area.innerHTML = '';
+  }
+}
+
+function renderQuiz() {
+  const p = getProgress();
+  const quiz = QUIZZES[currentSession];
+  const unlocked = isSessionUnlocked(currentSession);
+  const done = p['q' + (currentSession+1)];
+  const content = document.getElementById('quiz-content');
+
+  if (!unlocked) {
+    content.innerHTML = `
+      <div class="quiz-area">
+        <div class="locked-screen">
+          <div class="lock">🔒</div>
+          <h3>Kuis Terkunci</h3>
+          <p>${p.videoDone ? 'Selesaikan kuis sesi sebelumnya untuk membuka sesi ini.' : 'Selesaikan semua video pembelajaran terlebih dahulu.'}</p>
+          <a href="${p.videoDone ? '#' : 'video.html'}">${p.videoDone ? 'Mulai dari Kuis 1' : '→ Tonton Video'}</a>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Count answered
+  const answered = Object.keys(answers).length;
+  const total = quiz.questions.length;
+
+  // Score card
+  let scoreHTML = `
+    <div class="score-card">
+      <div class="score-item">
+        <div class="value">${answered}/${total}</div>
+        <div class="label">Dijawab</div>
+      </div>
+      <div class="score-item">
+        <div class="value" id="correct-count">${submitted ? countCorrect() : '-'}</div>
+        <div class="label">Benar</div>
+      </div>
+      <div class="score-item">
+        <div class="value">${done ? '✅' : (submitted ? '❌' : '⏳')}</div>
+        <div class="label">Status</div>
+      </div>
+    </div>`;
+
+  // If all done and passed
+  if (done) {
+    content.innerHTML = `
+      <div class="quiz-area">
+        ${scoreHTML}
+        <div class="result-card">
+          <div class="result-emoji">🎉</div>
+          <h2>Selamat! Kuis Selesai!</h2>
+          <p>Kamu telah menyelesaikan Kuis Sesi ${quiz.id}: ${quiz.title} dengan sempurna!</p>
+          <div class="result-score">
+            <div class="big-score">100%</div>
+            <div class="score-label">Semua jawaban benar!</div>
+          </div>
+          <div class="action-row">
+            ${currentSession < 2
+              ? `<button class="action-btn btn-continue" onclick="goNextSession()">🎯 Kuis Berikutnya →</button>`
+              : `<button class="action-btn btn-finish-all" onclick="window.location.href='index.html'">🏠 Kembali ke AR</button>`
+            }
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Show result after submit
+  if (submitted) {
+    const correct = countCorrect();
+    const wrongItems = getWrongAnswers();
+    const passed = correct === total;
+
+    content.innerHTML = `
+      <div class="quiz-area">
+        ${scoreHTML}
+        <div class="result-card">
+          <div class="result-emoji">${passed ? '🎉' : '😅'}</div>
+          <h2>${passed ? 'Luar Biasa!' : 'Hampir Benar!'}</h2>
+          <p>${passed
+            ? 'Semua jawaban benar! Kamu berhasil menguasai materi sesi ini.'
+            : `Kamu mendapat ${correct} dari ${total} soal. Semua soal harus benar untuk melanjutkan. Pelajari kembali soal yang salah!`
+          }</p>
+          <div class="result-score">
+            <div class="big-score" style="color: ${passed ? 'var(--success)' : 'var(--error)'}">${Math.round(correct/total*100)}%</div>
+            <div class="score-label">${correct}/${total} jawaban benar</div>
+          </div>
+          ${!passed ? `
+          <div class="wrong-list">
+            <h4>❌ Soal yang Salah (harus diulang):</h4>
+            ${wrongItems.map(w => `
+              <div class="wrong-item">
+                <span class="q-num">Soal ${w.num}:</span> ${w.q}<br>
+                <div class="correct-ans">✓ Jawaban benar: ${w.correct}</div>
+              </div>
+            `).join('')}
+          </div>` : ''}
+          <div class="action-row">
+            ${!passed
+              ? `<button class="action-btn btn-retry" onclick="retryQuiz()">🔄 Ulangi Kuis</button>`
+              : `${currentSession < 2
+                  ? `<button class="action-btn btn-continue" onclick="goNextSession()">🎯 Kuis Berikutnya →</button>`
+                  : `<button class="action-btn btn-finish-all" onclick="window.location.href='index.html'">🏠 Kembali ke AR</button>`
+                }`
+            }
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Active quiz
+  const q = quiz.questions[currentQuestion];
+  const userAnswer = answers[currentQuestion];
+
+  content.innerHTML = `
+    <div class="quiz-area">
+      ${scoreHTML}
+      <div class="question-card">
+        <div class="question-header">
+          <div class="q-badge">${quiz.icon} Sesi ${quiz.id}: ${quiz.title}</div>
+          <div class="q-progress">Soal ${currentQuestion+1} / ${total}</div>
+        </div>
+        <div class="question-text">${currentQuestion+1}. ${q.q}</div>
+        <div class="options-list" id="options-list">
+          ${q.options.map((opt, i) => `
+            <button class="option-btn ${userAnswer === i ? 'selected' : ''}" onclick="selectAnswer(${i})" id="opt-${i}">
+              <span class="option-letter">${['A','B','C','D'][i]}</span>
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+      <div class="quiz-nav">
+        ${currentQuestion > 0 ? `<button class="quiz-nav-btn btn-prev-q" onclick="prevQuestion()">← Sebelumnya</button>` : ''}
+        ${currentQuestion < total - 1
+          ? `<button class="quiz-nav-btn btn-next-q" onclick="nextQuestion()">Berikutnya →</button>`
+          : `<button class="quiz-nav-btn btn-submit" id="submit-btn" onclick="submitQuiz()" ${answered < total ? 'disabled' : ''}>
+              ${answered < total ? `Jawab semua (${answered}/${total})` : '📋 Kumpulkan Jawaban'}
+            </button>`
+        }
+      </div>
+    </div>`;
+
+  // Update overall progress bar
+  const pCount = [p.q1, p.q2, p.q3].filter(Boolean).length;
+  const pct = Math.round(pCount / 3 * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = pct + '%';
+  document.getElementById('progress-badge').textContent = pCount + '/3';
+}
+
+function selectAnswer(optIdx) {
+  answers[currentQuestion] = optIdx;
+  saveAnswers();
+
+  // Visual update
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.classList.remove('selected');
+    if (i === optIdx) btn.classList.add('selected');
+  });
+
+  // Update submit btn
+  const total = QUIZZES[currentSession].questions.length;
+  const submitBtn = document.getElementById('submit-btn');
+  if (submitBtn) {
+    const answered = Object.keys(answers).length;
+    submitBtn.disabled = answered < total;
+    submitBtn.textContent = answered < total
+      ? `Jawab semua (${answered}/${total})`
+      : '📋 Kumpulkan Jawaban';
+  }
+}
+
+function nextQuestion() {
+  if (currentQuestion < QUIZZES[currentSession].questions.length - 1) {
+    currentQuestion++;
+    renderQuiz();
+  }
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    renderQuiz();
+  }
+}
+
+function submitQuiz() {
+  const total = QUIZZES[currentSession].questions.length;
+  const answered = Object.keys(answers).length;
+  if (answered < total) { showToast('Jawab semua soal dulu!'); return; }
+
+  submitted = true;
+  localStorage.setItem('quiz_submitted_' + currentSession, 'true');
+
+  const correct = countCorrect();
+  if (correct === total) {
+    localStorage.setItem('quiz_session_' + (currentSession+1) + '_done', 'true');
+    showToast('🎉 Sempurna! Semua benar!');
+  } else {
+    showToast(`❌ ${correct}/${total} benar. Coba lagi!`);
+  }
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function retryQuiz() {
+  answers = {};
+  submitted = false;
+  currentQuestion = 0;
+  localStorage.removeItem('quiz_answers_' + currentSession);
+  localStorage.removeItem('quiz_submitted_' + currentSession);
+  render();
+}
+
+function countCorrect() {
+  const q = QUIZZES[currentSession].questions;
+  return q.filter((item, i) => answers[i] === item.answer).length;
+}
+
+function getWrongAnswers() {
+  const q = QUIZZES[currentSession].questions;
+  return q
+    .map((item, i) => ({ ...item, num: i+1, userAns: answers[i] }))
+    .filter(item => item.userAns !== item.answer)
+    .map(item => ({
+      num: item.num,
+      q: item.q,
+      correct: item.options[item.answer]
+    }));
+}
+
+function goNextSession() {
+  currentSession++;
+  loadSessionState();
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function render() {
+  renderTabs();
+  renderPrereq();
+  renderQuiz();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+loadSessionState();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Desk AR - Slides Materi</title>
+  <style>
+    :root {
+      --primary: #1a237e;
+      --secondary: #0d47a1;
+      --accent: #00bcd4;
+      --accent2: #0097a7;
+      --bg: #0a0e27;
+      --card: #111638;
+      --text: #e8eaf6;
+      --text-muted: #90a4ae;
+      --success: #00e676;
+      --warning: #ffd740;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .back-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.25); }
+
+    .header-title h1 { font-size: 17px; font-weight: 700; }
+    .header-title p { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+    .header-badge {
+      margin-left: auto;
+      background: rgba(0,188,212,0.2);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Session tabs */
+    .session-tabs {
+      display: flex;
+      padding: 16px 20px 0;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .session-tabs::-webkit-scrollbar { display: none; }
+
+    .session-tab {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .session-tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .session-tab.locked { opacity: 0.5; cursor: not-allowed; }
+
+    .session-tab .lock-icon { font-size: 10px; }
+
+    /* Progress overall */
+    .overall-progress {
+      margin: 16px 20px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-bar-outer {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #26c6da);
+      border-radius: 10px;
+      transition: width 0.6s ease;
+    }
+
+    /* Slide container */
+    .slide-container {
+      padding: 20px;
+    }
+
+    .slide-card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid rgba(0,188,212,0.15);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slide-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+    }
+
+    .slide-session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,188,212,0.1);
+      border: 1px solid rgba(0,188,212,0.3);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      width: fit-content;
+    }
+
+    .slide-number {
+      position: absolute;
+      top: 20px; right: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .slide-icon {
+      font-size: 42px;
+      margin-bottom: 12px;
+    }
+
+    .slide-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .slide-content {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .slide-content strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .slide-content ul {
+      margin-top: 10px;
+      padding-left: 0;
+      list-style: none;
+    }
+
+    .slide-content ul li {
+      padding: 6px 0 6px 24px;
+      position: relative;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .slide-content ul li::before {
+      content: '▶';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 10px;
+      top: 9px;
+    }
+
+    .highlight-box {
+      background: rgba(0,188,212,0.08);
+      border-left: 3px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .comp-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .comp-card .comp-icon { font-size: 24px; margin-bottom: 6px; }
+    .comp-card h4 { font-size: 13px; color: white; margin-bottom: 4px; }
+    .comp-card p { font-size: 11px; color: var(--text-muted); }
+
+    /* Slide nav dots */
+    .slide-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    /* Navigation buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px 20px;
+      margin-top: 4px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-prev {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-prev:hover { background: rgba(255,255,255,0.12); }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      box-shadow: 0 4px 15px rgba(0,188,212,0.3);
+    }
+    .btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,188,212,0.4); }
+
+    .btn-finish {
+      background: linear-gradient(135deg, #00e676, #00c853);
+      color: #1a237e;
+      box-shadow: 0 4px 15px rgba(0,230,118,0.3);
+    }
+
+    .btn-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Session complete card */
+    .session-complete {
+      background: linear-gradient(135deg, rgba(0,230,118,0.1), rgba(0,188,212,0.1));
+      border: 1px solid rgba(0,230,118,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin: 0 20px 20px;
+    }
+
+    .session-complete .check { font-size: 40px; margin-bottom: 10px; }
+    .session-complete h3 { font-size: 18px; color: var(--success); margin-bottom: 6px; }
+    .session-complete p { font-size: 13px; color: var(--text-muted); }
+
+    /* Locked overlay */
+    .locked-overlay {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .locked-overlay .lock { font-size: 48px; margin-bottom: 16px; }
+    .locked-overlay h3 { font-size: 18px; color: white; margin-bottom: 8px; }
+    .locked-overlay p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      white-space: nowrap;
+      border: 1px solid rgba(0,188,212,0.3);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .slide-card { animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <a href="index.html" class="back-btn">←</a>
+    <div class="header-title">
+      <h1>📚 Slides Materi AR</h1>
+      <p>Augmented Reality Learning</p>
+    </div>
+    <div class="header-badge" id="progress-badge">0/3</div>
+  </div>
+
+  <!-- Session Tabs -->
+  <div class="session-tabs" id="session-tabs"></div>
+
+  <!-- Overall Progress -->
+  <div class="overall-progress">
+    <div class="progress-label">
+      <span>Progress Keseluruhan</span>
+      <span id="progress-text">0%</span>
+    </div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Slide Area -->
+  <div class="slide-container" id="slide-container"></div>
+
+  <!-- Slide Dots -->
+  <div class="slide-dots" id="slide-dots"></div>
+
+  <!-- Nav Buttons -->
+  <div class="nav-buttons" id="nav-buttons"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+<script>
+const SESSIONS = [
+  {
+    id: 1,
+    title: "Pengenalan AR",
+    icon: "🌐",
+    slides: [
+      {
+        icon: "🌐",
+        title: "Apa itu Augmented Reality?",
+        content: `<strong>Augmented Reality (AR)</strong> adalah teknologi yang menggabungkan dunia nyata dengan elemen digital secara real-time.<br><br>
+        Berbeda dengan Virtual Reality, AR tidak menggantikan dunia nyata, melainkan <strong>menambahkan lapisan informasi digital</strong> di atasnya melalui perangkat seperti smartphone atau kacamata AR.
+        <div class="highlight-box">💡 AR = Dunia Nyata + Elemen Digital yang Terintegrasi</div>`
+      },
+      {
+        icon: "📅",
+        title: "Sejarah Singkat AR",
+        content: `<ul>
+          <li><strong>1968</strong> — Ivan Sutherland menciptakan "The Sword of Damocles", HMD pertama di dunia</li>
+          <li><strong>1992</strong> — Tom Caudell memperkenalkan istilah "Augmented Reality"</li>
+          <li><strong>1999</strong> — ARToolKit, library AR open-source pertama dirilis</li>
+          <li><strong>2009</strong> — AR mulai masuk browser dengan JSARToolKit</li>
+          <li><strong>2016</strong> — Pokemon Go viral, AR populer di kalangan umum</li>
+          <li><strong>2023</strong> — Apple Vision Pro, era baru Spatial Computing</li>
+        </ul>`
+      },
+      {
+        icon: "⚖️",
+        title: "AR vs VR: Perbedaan Utama",
+        content: `<div class="comparison-grid">
+          <div class="comp-card">
+            <div class="comp-icon">🌐</div>
+            <h4>Augmented Reality</h4>
+            <p>Menambah elemen digital ke dunia nyata. Pengguna tetap melihat lingkungan sekitar.</p>
+          </div>
+          <div class="comp-card">
+            <div class="comp-icon">🥽</div>
+            <h4>Virtual Reality</h4>
+            <p>Menggantikan dunia nyata sepenuhnya dengan lingkungan digital buatan.</p>
+          </div>
+        </div>
+        <div class="highlight-box">AR: 25% virtual + 75% nyata | VR: 100% virtual</div>`
+      },
+      {
+        icon: "🎯",
+        title: "Karakteristik AR (Milgram's Reality-Virtuality Continuum)",
+        content: `Menurut <strong>Milgram & Kishino (1994)</strong>, AR berada di antara dunia nyata dan dunia virtual:
+        <ul>
+          <li><strong>Real Environment</strong> — Dunia nyata murni</li>
+          <li><strong>Augmented Reality</strong> — Nyata + sedikit virtual</li>
+          <li><strong>Augmented Virtuality</strong> — Virtual + sedikit nyata</li>
+          <li><strong>Virtual Environment</strong> — Virtual murni (VR)</li>
+        </ul>
+        <div class="highlight-box">AR memiliki 3 karakteristik: kombinasi nyata-virtual, interaktif real-time, dan terdaftar dalam 3D</div>`
+      }
+    ]
+  },
+  {
+    id: 2,
+    title: "Cara Kerja AR",
+    icon: "⚙️",
+    slides: [
+      {
+        icon: "🏷️",
+        title: "AR Berbasis Marker (Marker-Based)",
+        content: `<strong>Marker-based AR</strong> menggunakan gambar atau pola tertentu sebagai "jangkar" untuk menampilkan konten digital.<br><br>
+        <ul>
+          <li><strong>Marker Hiro</strong> — Marker default dalam ARToolKit</li>
+          <li><strong>QR Code</strong> — Dapat dijadikan trigger AR</li>
+          <li><strong>Image Marker</strong> — Foto produk, logo, dll.</li>
+          <li><strong>Matrix Code</strong> — Pola binary untuk identifikasi</li>
+        </ul>
+        <div class="highlight-box">📌 Proyek Smart Desk AR ini menggunakan marker Hiro dari AR.js!</div>`
+      },
+      {
+        icon: "📍",
+        title: "AR Tanpa Marker (Markerless)",
+        content: `<strong>Markerless AR</strong> tidak memerlukan marker fisik. Menggunakan sensor dan AI untuk memahami lingkungan:
+        <ul>
+          <li><strong>GPS-based</strong> — Menggunakan koordinat lokasi (Pokemon Go)</li>
+          <li><strong>Surface Detection</strong> — Mendeteksi permukaan datar (ARKit, ARCore)</li>
+          <li><strong>Face Tracking</strong> — Melacak wajah pengguna (filter Instagram)</li>
+          <li><strong>Object Recognition</strong> — Mengenali objek 3D di sekitar</li>
+        </ul>
+        <div class="highlight-box">Markerless AR lebih fleksibel namun membutuhkan komputasi lebih tinggi</div>`
+      },
+      {
+        icon: "🔧",
+        title: "Komponen Teknis AR",
+        content: `Sistem AR memerlukan beberapa komponen utama:
+        <ul>
+          <li><strong>Sensor & Kamera</strong> — Menangkap dunia nyata secara real-time</li>
+          <li><strong>Prosesor</strong> — Menganalisis input dan menghitung posisi</li>
+          <li><strong>Display</strong> — Menampilkan gabungan nyata dan virtual</li>
+          <li><strong>Software AR</strong> — AR.js, ARCore, ARKit, Vuforia</li>
+          <li><strong>Input Devices</strong> — Touchscreen, gesture, voice command</li>
+        </ul>`
+      },
+      {
+        icon: "📐",
+        title: "Cara Kerja AR: Proses Deteksi",
+        content: `Proses kerja AR secara teknis:
+        <ul>
+          <li><strong>1. Capture</strong> — Kamera menangkap frame video</li>
+          <li><strong>2. Track</strong> — Sistem mendeteksi marker/permukaan</li>
+          <li><strong>3. Register</strong> — Menghitung posisi dan orientasi kamera</li>
+          <li><strong>4. Render</strong> — Objek 3D digambar di posisi yang tepat</li>
+          <li><strong>5. Display</strong> — Gabungan nyata+virtual ditampilkan ke user</li>
+        </ul>
+        <div class="highlight-box">Semua proses ini terjadi dalam <strong>milidetik</strong> untuk pengalaman yang mulus!</div>`
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "Aplikasi AR",
+    icon: "🚀",
+    slides: [
+      {
+        icon: "🎓",
+        title: "AR di Bidang Pendidikan",
+        content: `AR mentransformasi cara belajar dengan membuat materi lebih interaktif:
+        <ul>
+          <li><strong>Buku interaktif</strong> — Scan halaman buku untuk lihat animasi 3D</li>
+          <li><strong>Laboratorium virtual</strong> — Eksperimen kimia/fisika tanpa risiko</li>
+          <li><strong>Anatomi 3D</strong> — Visualisasi organ tubuh manusia</li>
+          <li><strong>Museum digital</strong> — Artefak sejarah hidup kembali</li>
+          <li><strong>Smart Desk AR</strong> — Seperti yang sedang kamu gunakan!</li>
+        </ul>`
+      },
+      {
+        icon: "🏥",
+        title: "AR di Bidang Kesehatan",
+        content: `AR membantu tenaga medis dan pasien:
+        <ul>
+          <li><strong>Panduan operasi</strong> — Overlay informasi anatomi saat operasi</li>
+          <li><strong>Terapi rehabilitasi</strong> — Fisioterapi dengan gamifikasi AR</li>
+          <li><strong>Pelatihan dokter</strong> — Simulasi prosedur medis realistis</li>
+          <li><strong>Vein finding</strong> — AR membantu menemukan pembuluh darah</li>
+          <li><strong>Mental health</strong> — Terapi exposure untuk fobia</li>
+        </ul>
+        <div class="highlight-box">Microsoft HoloLens digunakan di lebih dari 200 rumah sakit dunia</div>`
+      },
+      {
+        icon: "🏭",
+        title: "AR di Bidang Industri",
+        content: `AR meningkatkan efisiensi di berbagai industri:
+        <ul>
+          <li><strong>Manufaktur</strong> — Panduan perakitan step-by-step overlay di mesin nyata</li>
+          <li><strong>Retail</strong> — "Coba" furnitur di rumah sebelum beli (IKEA Place)</li>
+          <li><strong>Real Estate</strong> — Virtual tour properti yang belum dibangun</li>
+          <li><strong>Otomotif</strong> — Manual servis kendaraan berbasis AR</li>
+          <li><strong>Militer</strong> — Helm tempur dengan informasi taktis overlay</li>
+        </ul>`
+      },
+      {
+        icon: "🔮",
+        title: "Masa Depan AR",
+        content: `Tren AR yang sedang berkembang:
+        <ul>
+          <li><strong>WebAR</strong> — AR langsung di browser tanpa install app</li>
+          <li><strong>5G + AR</strong> — Latensi rendah untuk AR cloud yang real-time</li>
+          <li><strong>AR Glasses</strong> — Meta Ray-Ban, Apple Vision Pro</li>
+          <li><strong>Spatial Computing</strong> — Komputer yang memahami ruang fisik</li>
+          <li><strong>Metaverse</strong> — Dunia hybrid nyata-virtual yang persisten</li>
+        </ul>
+        <div class="highlight-box">Pasar AR global diperkirakan mencapai $198 miliar pada 2025!</div>`
+      }
+    ]
+  }
+];
+
+let currentSession = 0;
+let currentSlide = 0;
+
+function getProgress() {
+  return {
+    s1: localStorage.getItem('slides_session_1_done') === 'true',
+    s2: localStorage.getItem('slides_session_2_done') === 'true',
+    s3: localStorage.getItem('slides_session_3_done') === 'true',
+    slide: JSON.parse(localStorage.getItem('slides_progress') || '{}')
+  };
+}
+
+function isSessionUnlocked(idx) {
+  if (idx === 0) return true;
+  const p = getProgress();
+  if (idx === 1) return p.s1;
+  if (idx === 2) return p.s2;
+  return false;
+}
+
+function renderTabs() {
+  const p = getProgress();
+  const tabs = document.getElementById('session-tabs');
+  tabs.innerHTML = '';
+  SESSIONS.forEach((s, i) => {
+    const unlocked = isSessionUnlocked(i);
+    const done = p['s' + (i+1)];
+    const active = i === currentSession;
+    const div = document.createElement('div');
+    div.className = `session-tab ${active ? 'active' : ''} ${!unlocked ? 'locked' : ''}`;
+    div.innerHTML = `${s.icon} Sesi ${s.id}: ${s.title} ${done ? '✅' : (!unlocked ? '<span class="lock-icon">🔒</span>' : '')}`;
+    div.onclick = () => {
+      if (!unlocked) { showToast('Selesaikan sesi sebelumnya terlebih dahulu!'); return; }
+      currentSession = i;
+      currentSlide = parseInt(localStorage.getItem('slides_progress_' + i) || '0');
+      render();
+    };
+    tabs.appendChild(div);
+  });
+}
+
+function renderProgress() {
+  const p = getProgress();
+  const done = [p.s1, p.s2, p.s3].filter(Boolean).length;
+  const pct = Math.round((done / 3) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = pct + '%';
+  document.getElementById('progress-badge').textContent = done + '/3';
+}
+
+function renderSlide() {
+  const session = SESSIONS[currentSession];
+  const slide = session.slides[currentSlide];
+  const total = session.slides.length;
+  const isLast = currentSlide === total - 1;
+  const isDone = localStorage.getItem('slides_session_' + (currentSession+1) + '_done') === 'true';
+
+  const container = document.getElementById('slide-container');
+  container.innerHTML = `
+    <div class="slide-card">
+      <div class="slide-session-badge">${session.icon} Sesi ${session.id}: ${session.title}</div>
+      <div class="slide-number">Slide ${currentSlide+1}/${total}</div>
+      <div class="slide-icon">${slide.icon}</div>
+      <div class="slide-title">${slide.title}</div>
+      <div class="slide-content">${slide.content}</div>
+    </div>
+  `;
+
+  // Dots
+  const dots = document.getElementById('slide-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = `dot ${i === currentSlide ? 'active' : ''}`;
+    d.onclick = () => { currentSlide = i; render(); };
+    dots.appendChild(d);
+  }
+
+  // Nav buttons
+  const nav = document.getElementById('nav-buttons');
+  nav.innerHTML = '';
+
+  if (currentSlide > 0) {
+    const prev = document.createElement('button');
+    prev.className = 'nav-btn btn-prev';
+    prev.innerHTML = '← Sebelumnya';
+    prev.onclick = () => { currentSlide--; render(); };
+    nav.appendChild(prev);
+  }
+
+  if (isLast && !isDone) {
+    const fin = document.createElement('button');
+    fin.className = 'nav-btn btn-finish';
+    fin.innerHTML = '✅ Selesai Sesi';
+    fin.onclick = completeSession;
+    nav.appendChild(fin);
+  } else if (isLast && isDone) {
+    const next = document.createElement('button');
+    next.className = 'nav-btn btn-next';
+    next.innerHTML = '🎉 Sesi Selesai';
+    next.disabled = true;
+    next.classList.add('btn-disabled');
+    nav.appendChild(next);
+    if (currentSession < 2) {
+      const nextSes = document.createElement('button');
+      nextSes.className = 'nav-btn btn-next';
+      nextSes.innerHTML = 'Sesi Berikutnya →';
+      nextSes.onclick = () => { currentSession++; currentSlide = 0; render(); };
+      nav.appendChild(nextSes);
+    } else {
+      const goVideo = document.createElement('button');
+      goVideo.className = 'nav-btn btn-next';
+      goVideo.innerHTML = '🎬 Lanjut ke Video';
+      goVideo.onclick = () => { window.location.href = 'video.html'; };
+      nav.appendChild(goVideo);
+    }
+  } else if (!isLast) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'nav-btn btn-next';
+    nextBtn.innerHTML = 'Berikutnya →';
+    nextBtn.onclick = () => {
+      currentSlide++;
+      localStorage.setItem('slides_progress_' + currentSession, currentSlide);
+      render();
+    };
+    nav.appendChild(nextBtn);
+  }
+}
+
+function completeSession() {
+  const key = 'slides_session_' + (currentSession+1) + '_done';
+  localStorage.setItem(key, 'true');
+  showToast('✅ Sesi ' + (currentSession+1) + ' selesai! Bagus sekali!');
+  render();
+}
+
+function render() {
+  renderTabs();
+  renderProgress();
+  renderSlide();
+  // scroll top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Init
+currentSlide = parseInt(localStorage.getItem('slides_progress_' + currentSession) || '0');
+render();
+</script>
+</body>
+</html>

@@ -1027,12 +1027,16 @@ function tapZone(modalId, e) {
         console.log('[DESK] bbox FINAL — w:' + fw.toFixed(3) +
           ' h:' + fh.toFixed(3) + ' d:' + fd.toFixed(3));
 
-        /* Koreksi Y agar dasar model duduk di marker plane */
-        var minY = bbox.min.y * sf;
-        if (Math.abs(minY) > 0.0001) {
-          deskEl.setAttribute('position', '0 ' + (-minY).toFixed(4) + ' 0');
-          console.log('[DESK] position adjusted Y=' + (-minY).toFixed(4) + ' (minY correction)');
-        }
+        /* Centering: geser model agar pusat bbox X/Z tepat di origin marker.
+           Offset Y agar dasar model (min.y) menyentuh y=0. */
+        var centerX = (bbox.min.x + bbox.max.x) / 2 * sf;
+        var centerZ = (bbox.min.z + bbox.max.z) / 2 * sf;
+        var offsetY = -bbox.min.y * sf;
+
+        var px = -centerX, py = offsetY, pz = -centerZ;
+        deskEl.object3D.position.set(px, py, pz);
+        console.log('[DESK] final position — x:' + px.toFixed(4) +
+          ' y:' + py.toFixed(4) + ' z:' + pz.toFixed(4));
       } else {
         console.warn('[DESK] maxDim=0 — model mungkin kosong atau gagal parse');
       }

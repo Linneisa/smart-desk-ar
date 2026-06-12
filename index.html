@@ -25,6 +25,11 @@
       position:fixed !important; top:0; left:0;
       width:100% !important; height:100% !important;
     }
+    /* Paksa video feed AR.js mengisi layar portrait tanpa distorsi */
+    video {
+      width:100% !important; height:100% !important;
+      object-fit:cover !important;
+    }
 
     /* ── UI OVERLAY ────────────────────────────────── */
     #ui-overlay {
@@ -356,7 +361,7 @@
 <!-- ── AR SCENE ──────────────────────────────────────── -->
 <a-scene
   embedded
-  arjs="sourceType: webcam; debugUIEnabled: false;"
+  arjs="sourceType: webcam; debugUIEnabled: false; sourceWidth: 480; sourceHeight: 640; displayWidth: 480; displayHeight: 640;"
   vr-mode-ui="enabled: false"
   loading-screen="enabled: false"
   renderer="antialias: true; precision: medium"
@@ -989,11 +994,10 @@ function tapZone(modalId, e) {
   var deskEl = document.getElementById('ar-desk');
   var TARGET_SIZE = 0.8;
 
-  /* Rotasi meja — putar Y agar sisi PANJANG sejajar horizontal layar portrait.
-     Versi A: Y 90°  — aktif
-     Versi B: Y 270° — coba jika meja masih membelakangi atau arah salah */
-  var ROT = { x: 0, y: Math.PI / 2,       z: 0 }; /* Versi A — Y 90°  ← AKTIF */
-  // var ROT = { x: 0, y: 3 * Math.PI / 2, z: 0 }; /* Versi B — Y 270° */
+  /* Rotasi final: Y 180° — monitor menghadap kamera, arah sudah benar.
+     Distorsi proporsi portrait disebabkan AR.js default camera landscape;
+     diatasi dengan sourceWidth/Height 480x640 + video object-fit:cover. */
+  var ROT = { x: 0, y: Math.PI, z: 0 };
 
   function hideLoading() {
     if (!loadEl) return;
@@ -1054,6 +1058,18 @@ function tapZone(modalId, e) {
 })();
 
 updateProgressBar();
+
+/* Log dimensi video dan canvas setelah scene siap — verifikasi portrait config */
+document.querySelector('a-scene').addEventListener('loaded', function() {
+  setTimeout(function() {
+    var vid = document.querySelector('video');
+    var cvs = document.querySelector('canvas');
+    if (vid) console.log('[AR] video — ' + vid.videoWidth + 'x' + vid.videoHeight +
+      ' (element: ' + vid.offsetWidth + 'x' + vid.offsetHeight + ')');
+    if (cvs) console.log('[AR] canvas — ' + cvs.width + 'x' + cvs.height +
+      ' (element: ' + cvs.offsetWidth + 'x' + cvs.offsetHeight + ')');
+  }, 1000);
+});
 </script>
 </body>
 </html>

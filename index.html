@@ -348,6 +348,38 @@
     .locked-msg .lk { font-size:48px; margin-bottom:14px; }
     .locked-msg h3  { font-size:17px; color:white; margin-bottom:7px; }
     .locked-msg p   { font-size:13px; color:var(--muted); line-height:1.6; }
+
+    /* ── DEBUG ROTATION PANEL — SEMENTARA ─────────────────────────────
+       Hapus seluruh blok CSS ini setelah rotasi final ditemukan.
+    ─────────────────────────────────────────────────────────────────── */
+    #debug-rot-panel {
+      position:fixed; top:70px; right:8px; width:138px;
+      background:rgba(0,0,0,.8); color:white;
+      padding:8px 10px; border-radius:10px; font-size:11px;
+      border:1px solid rgba(0,188,212,.45); backdrop-filter:blur(6px);
+      z-index:1500; pointer-events:all; display:none;
+    }
+    #debug-rot-panel.show { display:block; }
+    #drot-title { font-weight:700; color:#00bcd4; margin-bottom:6px; font-size:11px; letter-spacing:.3px; }
+    .drot-row { display:flex; align-items:center; gap:5px; margin-bottom:4px; }
+    .drot-row label { width:12px; font-weight:700; color:#90a4ae; font-size:10px; }
+    .drot-row input {
+      flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+      color:white; border-radius:4px; padding:2px 4px;
+      font-size:11px; text-align:center; width:0;
+    }
+    #drot-display {
+      background:rgba(0,188,212,.1); border:1px solid rgba(0,188,212,.3);
+      border-radius:4px; padding:3px 5px; margin:5px 0;
+      font-family:monospace; font-size:10px; color:#00bcd4; text-align:center;
+    }
+    .drot-btns { display:flex; gap:4px; }
+    .drot-btns button {
+      flex:1; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2);
+      color:white; border-radius:5px; padding:4px 0;
+      font-size:10px; cursor:pointer; -webkit-tap-highlight-color:transparent;
+    }
+    .drot-btns button:active { background:rgba(0,188,212,.3); }
   </style>
 </head>
 <body>
@@ -455,6 +487,31 @@
     <button class="menu-btn" onclick="openModal('modal-slides')"><span class="icon">📚</span><span>SLIDES</span></button>
     <button class="menu-btn" onclick="openModal('modal-video')"><span class="icon">🎬</span><span>VIDEO</span></button>
     <button class="menu-btn" onclick="openModal('modal-quiz')"><span class="icon">🎯</span><span>KUIS</span></button>
+  </div>
+
+  <!-- ── DEBUG ROTATION PANEL — SEMENTARA ─────────────────────────────
+       Hapus div ini setelah rotasi final ditemukan.
+       Muncul otomatis saat marker terdeteksi.
+  ─────────────────────────────────────────────────────────────────── -->
+  <div id="debug-rot-panel">
+    <div id="drot-title">🔧 Debug Rotasi</div>
+    <div class="drot-row">
+      <label>X</label>
+      <input type="number" id="drot-x" value="180" min="-180" max="360" step="90" oninput="debugRotUpdate()">
+    </div>
+    <div class="drot-row">
+      <label>Y</label>
+      <input type="number" id="drot-y" value="0" min="-180" max="360" step="90" oninput="debugRotUpdate()">
+    </div>
+    <div class="drot-row">
+      <label>Z</label>
+      <input type="number" id="drot-z" value="0" min="-180" max="360" step="90" oninput="debugRotUpdate()">
+    </div>
+    <div id="drot-display">X:180 Y:0 Z:0</div>
+    <div class="drot-btns">
+      <button onclick="debugRotReset()">Reset</button>
+      <button onclick="debugRotLog()">Log</button>
+    </div>
   </div>
 </div>
 
@@ -945,17 +1002,21 @@ var scanHint  = document.getElementById('scan-hint');
 var tapZones  = document.getElementById('tap-zones');
 var headerSub = document.getElementById('header-sub');
 
+var _debugPanel = document.getElementById('debug-rot-panel');
+
 document.getElementById('main-marker').addEventListener('markerFound', function() {
   scanHint.style.display = 'none';
   tapZones.classList.add('active');
   headerSub.textContent = 'Marker terdeteksi ✓';
   showToast('Meja AR muncul! Tap area objek atau tombol di bawah');
+  if (_debugPanel) _debugPanel.classList.add('show');
 });
 
 document.getElementById('main-marker').addEventListener('markerLost', function() {
   tapZones.classList.remove('active');
   scanHint.style.display = '';
   headerSub.textContent = 'Arahkan kamera ke marker Hiro';
+  if (_debugPanel) _debugPanel.classList.remove('show');
 });
 
 /* ── TAP ZONE handler ────────────────────────────── */
@@ -984,9 +1045,11 @@ function tapZone(modalId, e) {
 (function() {
   var loadEl = document.getElementById('model-loading');
   var fillEl = document.getElementById('ld-fill');
-  console.log('Loading desk model...');
-
   var deskEl = document.getElementById('ar-desk');
+  var TARGET_SIZE = 0.8;
+
+  /* Rotasi awal (derajat) — cocok dengan input debug panel */
+  var INIT_ROT = { x: 180, y: 0, z: 0 };
 
   function hideLoading() {
     if (!loadEl) return;
@@ -996,67 +1059,56 @@ function tapZone(modalId, e) {
 
   if (!deskEl) { hideLoading(); return; }
 
-  /* ── ROTASI ORIENTASI MODEL ─────────────────────────────────────────
-     Uncomment SATU versi saja. Rotasi diterapkan ke mesh sebelum bbox
-     dihitung, sehingga centering X/Z/Y tetap akurat otomatis.
-
-     Versi A — tanpa rotasi (model sudah Y-up, orientasi benar)      ← AKTIF
-     Versi B — rotation X -90° (Z-up → Y-up, model tidur jadi tegak)
-     Versi C — rotation Y 180° (balik arah hadap, tidak tukar depth)
-     Versi D — rotation X 180° (balik atas-bawah)
-  ─────────────────────────────────────────────────────────────────── */
-  // var ROT = { x: 0,        y: 0,       z: 0 }; /* Versi A — proporsi benar, tapi terbalik */
-  // var ROT = { x: -Math.PI / 2, y: 0,   z: 0 }; /* Versi B */
-  // var ROT = { x: 0,        y: Math.PI, z: 0 }; /* Versi C */
-  var ROT = { x: Math.PI,   y: 0,       z: 0 };   /* Versi D ← AKTIF: flip 180° X */
-
-  /* Ukuran target dalam unit marker. Kurangi jika masih terlalu besar. */
-  var TARGET_SIZE = 0.8;
-
-  deskEl.addEventListener('model-loaded', function(e) {
-    console.log('[DESK] model-loaded event fired ✓');
-    if (fillEl) fillEl.style.width = '100%';
+  /* ── Fungsi inti: terapkan rotasi (derajat), hitung bbox, set scale+posisi ── */
+  window.deskApplyRotAndCenter = function(degX, degY, degZ) {
+    var model = window._deskModel;
+    if (!model || !deskEl) return;
     try {
-      var model = e.detail.model;
+      var rx = THREE.MathUtils.degToRad(degX);
+      var ry = THREE.MathUtils.degToRad(degY);
+      var rz = THREE.MathUtils.degToRad(degZ);
 
-      /* 1. Terapkan rotasi ke mesh sebelum bbox dihitung */
-      model.rotation.set(ROT.x, ROT.y, ROT.z);
+      model.rotation.set(rx, ry, rz);
       model.updateMatrixWorld(true);
-      console.log('[DESK] rotation — x:' + (ROT.x*180/Math.PI).toFixed(0) +
-        '° y:' + (ROT.y*180/Math.PI).toFixed(0) +
-        '° z:' + (ROT.z*180/Math.PI).toFixed(0) + '°');
 
-      /* 2. Bounding box SETELAH rotasi */
       var bbox   = new THREE.Box3().setFromObject(model);
       var size   = bbox.getSize(new THREE.Vector3());
       var maxDim = Math.max(size.x, size.y, size.z);
 
-      console.log('[DESK] bbox (post-rotation) — ' +
-        size.x.toFixed(3) + 'x' + size.y.toFixed(3) + 'x' + size.z.toFixed(3) +
-        ' maxDim:' + maxDim.toFixed(3));
-      console.log('[DESK] min — x:' + bbox.min.x.toFixed(3) +
-        ' y:' + bbox.min.y.toFixed(3) + ' z:' + bbox.min.z.toFixed(3));
-      console.log('[DESK] max — x:' + bbox.max.x.toFixed(3) +
-        ' y:' + bbox.max.y.toFixed(3) + ' z:' + bbox.max.z.toFixed(3));
+      console.log('[DESK] rot=' + degX + ',' + degY + ',' + degZ +
+        ' bbox=' + size.x.toFixed(3) + 'x' + size.y.toFixed(3) + 'x' + size.z.toFixed(3));
 
       if (maxDim > 0) {
-        /* 3. Scale */
         var sf = TARGET_SIZE / maxDim;
         deskEl.setAttribute('scale', sf + ' ' + sf + ' ' + sf);
-        console.log('[DESK] targetSize=' + TARGET_SIZE + '  sf=' + sf.toFixed(6) +
-          '  final:' + (size.x*sf).toFixed(3) + 'x' + (size.y*sf).toFixed(3) + 'x' + (size.z*sf).toFixed(3));
-
-        /* 4. Centering: bbox center X/Z → marker origin; min.y → world Y=0 */
         var px = -((bbox.min.x + bbox.max.x) / 2) * sf;
         var py = -bbox.min.y * sf;
         var pz = -((bbox.min.z + bbox.max.z) / 2) * sf;
         deskEl.object3D.position.set(px, py, pz);
-        console.log('[DESK] final position — x:' + px.toFixed(4) +
-          ' y:' + py.toFixed(4) + ' z:' + pz.toFixed(4));
-      } else {
-        console.warn('[DESK] maxDim=0 — model kosong atau gagal parse');
+        console.log('[DESK] sf=' + sf.toFixed(5) +
+          ' pos=(' + px.toFixed(3) + ',' + py.toFixed(3) + ',' + pz.toFixed(3) + ')');
       }
-    } catch(err) { console.error('[DESK] normalize error:', err); }
+
+      /* Update display */
+      var disp = document.getElementById('drot-display');
+      if (disp) disp.textContent = 'X:' + degX + ' Y:' + degY + ' Z:' + degZ;
+    } catch(err) { console.error('[DESK] deskApplyRotAndCenter error:', err); }
+  };
+
+  deskEl.addEventListener('model-loaded', function(e) {
+    console.log('[DESK] model-loaded event fired ✓');
+    if (fillEl) fillEl.style.width = '100%';
+    window._deskModel = e.detail.model;
+
+    /* Sinkronkan input debug panel dengan nilai awal */
+    var ix = document.getElementById('drot-x');
+    var iy = document.getElementById('drot-y');
+    var iz = document.getElementById('drot-z');
+    if (ix) ix.value = INIT_ROT.x;
+    if (iy) iy.value = INIT_ROT.y;
+    if (iz) iz.value = INIT_ROT.z;
+
+    window.deskApplyRotAndCenter(INIT_ROT.x, INIT_ROT.y, INIT_ROT.z);
     hideLoading();
   });
 
@@ -1069,12 +1121,41 @@ function tapZone(modalId, e) {
     hideLoading();
   });
 
-  /* Timeout: jika 12 detik tidak ada event sama sekali */
   setTimeout(function() {
     console.warn('[DESK] Loading timeout (12s) — no model-loaded or model-error received');
     hideLoading();
   }, 12000);
 })();
+
+/* ── DEBUG ROTATION PANEL — hapus fungsi ini setelah rotasi final ditemukan ── */
+function debugRotUpdate() {
+  var degX = parseFloat(document.getElementById('drot-x').value) || 0;
+  var degY = parseFloat(document.getElementById('drot-y').value) || 0;
+  var degZ = parseFloat(document.getElementById('drot-z').value) || 0;
+  if (window.deskApplyRotAndCenter) window.deskApplyRotAndCenter(degX, degY, degZ);
+}
+
+function debugRotReset() {
+  document.getElementById('drot-x').value = 180;
+  document.getElementById('drot-y').value = 0;
+  document.getElementById('drot-z').value = 0;
+  debugRotUpdate();
+}
+
+function debugRotLog() {
+  var degX = parseFloat(document.getElementById('drot-x').value) || 0;
+  var degY = parseFloat(document.getElementById('drot-y').value) || 0;
+  var degZ = parseFloat(document.getElementById('drot-z').value) || 0;
+  var rx = THREE.MathUtils.degToRad(degX);
+  var ry = THREE.MathUtils.degToRad(degY);
+  var rz = THREE.MathUtils.degToRad(degZ);
+  alert(
+    'Rotasi saat ini (derajat):\n' +
+    'X: ' + degX + '°\nY: ' + degY + '°\nZ: ' + degZ + '°\n\n' +
+    'Radian (untuk ROT langsung di kode):\n' +
+    '{ x: ' + rx.toFixed(5) + ', y: ' + ry.toFixed(5) + ', z: ' + rz.toFixed(5) + ' }'
+  );
+}
 
 updateProgressBar();
 </script>

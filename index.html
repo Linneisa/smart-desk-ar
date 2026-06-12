@@ -1084,32 +1084,76 @@ function tapZone(modalId, e) {
        Jika origin model bukan di bagian bawah (minY ≠ 0),
        geser entity desk ke atas agar dasarnya tepat di Y=0. */
     var deskTopY = desk ? desk.topY : 0.3;
+    var deskPos  = '0 0 0';
     if (desk && desk.minY !== 0) {
+      deskPos = '0 ' + (-desk.minY).toFixed(4) + ' 0';
       var deskEl = document.getElementById('ar-desk');
-      if (deskEl) deskEl.setAttribute('position', '0 ' + (-desk.minY).toFixed(4) + ' 0');
+      if (deskEl) deskEl.setAttribute('position', deskPos);
       deskTopY = desk.topY - desk.minY;
     }
 
-    /* Monitor: dasar model tepat di permukaan meja.
-       monY = deskTopY - mon.minY  (bekerja untuk semua origin model) */
-    var monEl = document.getElementById('ar-monitor');
+    /* Monitor: dasar model tepat di permukaan meja. */
+    var monPos = 'n/a';
+    var monEl  = document.getElementById('ar-monitor');
     if (monEl) {
       var monOffsetY = mon ? -mon.minY : 0;
-      monEl.setAttribute('position', '0 ' + (deskTopY + monOffsetY).toFixed(4) + ' -0.25');
+      monPos = '0 ' + (deskTopY + monOffsetY).toFixed(4) + ' -0.25';
+      monEl.setAttribute('position', monPos);
     }
 
-    /* Tablet & notebook: flat di atas meja, +0.01 offset anti-amblas */
-    var tabEl = document.getElementById('ar-tablet');
-    if (tabEl) tabEl.setAttribute('position', '-0.2 ' + (deskTopY + 0.01).toFixed(4) + ' 0.1');
+    /* Tablet: tengah-depan kiri, Y lebih tinggi (+0.05) agar pasti
+       di atas permukaan, X/Z lebih dekat ke tengah meja. */
+    var tabY   = deskTopY + 0.05;
+    var tabPos = '-0.15 ' + tabY.toFixed(4) + ' 0.15';
+    var tabEl  = document.getElementById('ar-tablet');
+    if (tabEl) tabEl.setAttribute('position', tabPos);
 
-    var notEl = document.getElementById('ar-notebook');
-    if (notEl) notEl.setAttribute('position', '0.2 ' + (deskTopY + 0.01).toFixed(4) + ' 0.1');
+    /* Notebook: tengah-depan kanan, sama dengan tablet. */
+    var notY   = deskTopY + 0.05;
+    var notPos = '0.15 ' + notY.toFixed(4) + ' 0.15';
+    var notEl  = document.getElementById('ar-notebook');
+    if (notEl) notEl.setAttribute('position', notPos);
 
     /* Label teks di atas scene */
     var textEl = document.querySelector('#desk-group a-text');
     if (textEl) textEl.setAttribute('position', '0 ' + (deskTopY + 0.3).toFixed(3) + ' 0');
 
-    console.log('[AR] Positions finalized. deskTopY=' + deskTopY.toFixed(3));
+    /* ── Console.log semua posisi final untuk debugging ── */
+    console.log('[AR] === FINAL POSITIONS ===');
+    console.log('[AR] desk    : ' + deskPos + '  (deskTopY=' + deskTopY.toFixed(3) + ')');
+    console.log('[AR] monitor : ' + monPos);
+    console.log('[AR] tablet  : ' + tabPos);
+    console.log('[AR] notebook: ' + notPos);
+
+    /* ── Debug: cyan glow planes di posisi tablet & notebook ──
+       Berguna untuk melihat apakah posisi sudah di atas meja.
+       Hapus kedua <a-plane id="debug-tab"> dan <a-plane id="debug-not">
+       ini setelah posisi sudah tepat. */
+    var group = document.getElementById('desk-group');
+    if (group) {
+      ['debug-tab', 'debug-not'].forEach(function(id) {
+        var old = document.getElementById(id);
+        if (old) old.parentNode.removeChild(old);
+      });
+
+      var debugTab = document.createElement('a-plane');
+      debugTab.id = 'debug-tab';
+      debugTab.setAttribute('position', '-0.15 ' + tabY.toFixed(4) + ' 0.15');
+      debugTab.setAttribute('rotation', '-90 0 0');
+      debugTab.setAttribute('width',  '0.22');
+      debugTab.setAttribute('height', '0.22');
+      debugTab.setAttribute('material', 'color:#00bcd4; emissive:#00bcd4; emissiveIntensity:1; opacity:0.4; transparent:true; side:double');
+      group.appendChild(debugTab);
+
+      var debugNot = document.createElement('a-plane');
+      debugNot.id = 'debug-not';
+      debugNot.setAttribute('position', '0.15 ' + notY.toFixed(4) + ' 0.15');
+      debugNot.setAttribute('rotation', '-90 0 0');
+      debugNot.setAttribute('width',  '0.22');
+      debugNot.setAttribute('height', '0.22');
+      debugNot.setAttribute('material', 'color:#ffd740; emissive:#ffd740; emissiveIntensity:1; opacity:0.4; transparent:true; side:double');
+      group.appendChild(debugNot);
+    }
   }
 
   function onModelDone() {

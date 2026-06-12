@@ -358,12 +358,13 @@
   arjs="sourceType: webcam; debugUIEnabled: false;"
   vr-mode-ui="enabled: false"
   loading-screen="enabled: false"
+  renderer="antialias: true; precision: medium"
 >
-  <a-assets timeout="8000">
-    <a-asset-item id="desk-model"     src="models/desk.glb"></a-asset-item>
-    <a-asset-item id="monitor-model"  src="models/monitor.glb"></a-asset-item>
-    <a-asset-item id="tablet-model"   src="models/tablet.glb"></a-asset-item>
-    <a-asset-item id="notebook-model" src="models/notebook.glb"></a-asset-item>
+  <a-assets timeout="3000">
+    <a-asset-item id="desk-model"     src="./models/desk.glb"></a-asset-item>
+    <a-asset-item id="monitor-model"  src="./models/monitor.glb"></a-asset-item>
+    <a-asset-item id="tablet-model"   src="./models/tablet.glb"></a-asset-item>
+    <a-asset-item id="notebook-model" src="./models/notebook.glb"></a-asset-item>
   </a-assets>
   <a-marker preset="hiro" id="main-marker">
     <a-entity id="desk-group" position="0 0 0">
@@ -421,6 +422,31 @@
         position="0.13 0.22 0.02"
         rotation="0 -20 0"
         scale="0.22 0.22 0.22">
+      </a-entity>
+
+      <!-- ─── FALLBACK PRIMITIVES ───────────────────────────
+           Tersembunyi (visible="false"), otomatis muncul via JS
+           jika GLB gagal load. Tap zone tetap berfungsi.
+      ──────────────────────────────────────────────────── -->
+      <a-entity id="fallback-desk" visible="false">
+        <a-box width="1.0" height="0.05" depth="0.64" position="0 0.26 0"
+          material="color:#8B5A2B; roughness:0.8; metalness:0"></a-box>
+        <a-cylinder radius="0.022" height="0.24" position="-0.44 0.12 -0.28" material="color:#6B4226"></a-cylinder>
+        <a-cylinder radius="0.022" height="0.24" position=" 0.44 0.12 -0.28" material="color:#6B4226"></a-cylinder>
+        <a-cylinder radius="0.022" height="0.24" position="-0.44 0.12  0.28" material="color:#6B4226"></a-cylinder>
+        <a-cylinder radius="0.022" height="0.24" position=" 0.44 0.12  0.28" material="color:#6B4226"></a-cylinder>
+      </a-entity>
+      <a-entity id="fallback-monitor" visible="false" position="-0.12 0.24 0">
+        <a-box width="0.10" height="0.13" depth="0.03"
+          material="color:#111111; metalness:0.4; roughness:0.6; emissive:#00bcd4; emissiveIntensity:0.3"></a-box>
+      </a-entity>
+      <a-entity id="fallback-tablet" visible="false" position="0 0.24 0.05">
+        <a-box width="0.13" height="0.016" depth="0.09"
+          material="color:#1565c0; metalness:0.2; roughness:0.5"></a-box>
+      </a-entity>
+      <a-entity id="fallback-notebook" visible="false" position="0.13 0.24 0.02" rotation="0 -20 0">
+        <a-box width="0.09" height="0.12" depth="0.022"
+          material="color:#8B0000; metalness:0.1; roughness:0.4"></a-box>
       </a-entity>
 
       <a-text value="Smart Desk AR" position="0 0.55 0" align="center" color="#00bcd4" width="1.5"></a-text>
@@ -1009,18 +1035,23 @@ function tapZone(modalId, e) {
 }
 
 /* ════════════════════════════════════════════════════
-   GLB MODEL LOADING
+   GLB MODEL LOADING — debug + fallback
 ════════════════════════════════════════════════════ */
 (function() {
   var loadEl = document.getElementById('model-loading');
   var fillEl = document.getElementById('ld-fill');
-  var ids    = ['ar-desk', 'ar-monitor', 'ar-tablet', 'ar-notebook'];
   var done   = 0;
+  var models = [
+    { id:'ar-desk',     name:'desk'     },
+    { id:'ar-monitor',  name:'monitor'  },
+    { id:'ar-tablet',   name:'tablet'   },
+    { id:'ar-notebook', name:'notebook' }
+  ];
 
   function onDone() {
     done++;
-    if (fillEl) fillEl.style.width = (done / ids.length * 100) + '%';
-    if (done >= ids.length) hideLoading();
+    if (fillEl) fillEl.style.width = (done / models.length * 100) + '%';
+    if (done >= models.length) hideLoading();
   }
   function hideLoading() {
     if (!loadEl) return;
@@ -1028,14 +1059,26 @@ function tapZone(modalId, e) {
     setTimeout(function() { loadEl.style.display = 'none'; }, 450);
   }
 
-  ids.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (!el) { onDone(); return; }
-    el.addEventListener('model-loaded', onDone);
-    el.addEventListener('model-error',  onDone);
+  models.forEach(function(m) {
+    console.log('Loading ' + m.name + ' model...');
+    var el = document.getElementById(m.id);
+    if (!el) { console.warn(m.name + ' element not found'); onDone(); return; }
+
+    el.addEventListener('model-loaded', function() {
+      console.log(m.name.charAt(0).toUpperCase() + m.name.slice(1) + ' model loaded ✓');
+      onDone();
+    });
+    el.addEventListener('model-error', function(e) {
+      console.error(m.name + ' model failed: ' + ((e.detail && e.detail.message) || 'unknown error'));
+      /* Sembunyikan entity GLB, tampilkan primitive fallback */
+      el.setAttribute('visible', 'false');
+      var fb = document.getElementById('fallback-' + m.name);
+      if (fb) fb.setAttribute('visible', 'true');
+      onDone();
+    });
   });
 
-  setTimeout(hideLoading, 12000); /* fallback 12 detik */
+  setTimeout(hideLoading, 12000); /* fallback jika event tidak terpanggil */
 })();
 
 updateProgressBar();

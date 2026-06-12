@@ -369,59 +369,68 @@
   <a-marker preset="hiro" id="main-marker">
     <a-entity id="desk-group" position="0 0 0">
 
+      <!-- ─── DEBUG: titik referensi pusat marker ──────────
+           Sphere kuning kecil di 0,0,0 — untuk verifikasi
+           bahwa marker terdeteksi & scene ter-render.
+           Hapus setelah scale model sudah benar.
+      ──────────────────────────────────────────────────── -->
+      <a-entity position="0 0 0"
+        geometry="primitive: sphere; radius: 0.05"
+        material="color: yellow; shader: flat">
+      </a-entity>
+
       <!-- ─── MEJA (desk.glb) ─────────────────────────────
-           SESUAIKAN scale jika meja terlalu besar/kecil:
-             coba: "0.2 0.2 0.2" | "0.3 0.3 0.3" | "0.5 0.5 0.5"
-           SESUAIKAN rotation Y jika menghadap arah salah:
-             coba: "0 90 0" | "0 180 0"
+           Scale kecil untuk testing awal — naikkan bertahap
+           setelah bounding box dari console.log diketahui.
+           Coba berikutnya: "0.1 0.1 0.1" | "0.2 0.2 0.2"
+           ROTATION: mungkin perlu "0 90 0" | "0 180 0"
+           jika model menghadap arah yang salah.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-desk"
         gltf-model="#desk-model"
         position="0 0 0"
         rotation="0 0 0"
-        scale="0.4 0.4 0.4">
+        scale="0.05 0.05 0.05">
       </a-entity>
 
       <!-- ─── MONITOR / VIDEO (monitor.glb) ─ kiri meja ───
-           Tap zone KIRI → buka popup video
-           SESUAIKAN position Y agar duduk di atas permukaan meja:
-             jika desk scale=0.4 dan model ~75 cm → Y ≈ 0.22
-             coba: 0.15 | 0.20 | 0.25 | 0.30
-           SESUAIKAN scale: "0.12" | "0.18" | "0.22"
-           SESUAIKAN rotation Y agar layar menghadap kamera
+           Tap zone KIRI → buka popup video.
+           Y=0.05: estimasi tinggi permukaan meja (scale 0.05).
+           Sesuaikan Y setelah melihat console.log bbox meja.
+           ROTATION: "0 0 0" default — coba "0 180 0" jika
+           layar monitor menghadap arah yang salah.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-monitor"
         gltf-model="#monitor-model"
-        position="-0.12 0.22 0"
-        rotation="0 180 0"
-        scale="0.18 0.18 0.18">
+        position="-0.3 0.05 -0.2"
+        rotation="0 0 0"
+        scale="0.03 0.03 0.03">
       </a-entity>
 
       <!-- ─── TABLET / SLIDES (tablet.glb) ─ tengah meja ──
-           Tap zone TENGAH → buka popup slides
-           SESUAIKAN position Y sama seperti monitor di atas
-           SESUAIKAN rotation X jika model perlu dibaringkan flat:
-             "-90 0 0" (telentang) | "-10 0 0" (sedikit miring)
-           SESUAIKAN scale: "0.10" | "0.15" | "0.20"
+           Tap zone TENGAH → buka popup slides.
+           Y=0.05: estimasi tinggi permukaan meja (scale 0.05).
+           ROTATION: "0 0 0" default — coba "-90 0 0" jika
+           model perlu dibaringkan flat di atas meja.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-tablet"
         gltf-model="#tablet-model"
-        position="0 0.22 0.05"
-        rotation="-10 0 0"
-        scale="0.15 0.15 0.15">
+        position="0 0.05 -0.2"
+        rotation="0 0 0"
+        scale="0.02 0.02 0.02">
       </a-entity>
 
       <!-- ─── NOTEBOOK / KUIS (notebook.glb) ─ kanan meja ─
-           Tap zone KANAN → buka popup kuis
-           SESUAIKAN position Y sama seperti monitor di atas
-           SESUAIKAN rotation: "0 -20 0" posisi alami agak miring
-           SESUAIKAN scale: "0.15" | "0.22" | "0.30"
+           Tap zone KANAN → buka popup kuis.
+           Y=0.05: estimasi tinggi permukaan meja (scale 0.05).
+           ROTATION: "0 0 0" default — coba "0 -20 0" untuk
+           posisi natural agak miring ke kanan.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-notebook"
         gltf-model="#notebook-model"
-        position="0.13 0.22 0.02"
-        rotation="0 -20 0"
-        scale="0.22 0.22 0.22">
+        position="0.3 0.05 -0.2"
+        rotation="0 0 0"
+        scale="0.02 0.02 0.02">
       </a-entity>
 
       <!-- ─── FALLBACK PRIMITIVES ───────────────────────────
@@ -449,7 +458,7 @@
           material="color:#8B0000; metalness:0.1; roughness:0.4"></a-box>
       </a-entity>
 
-      <a-text value="Smart Desk AR" position="0 0.55 0" align="center" color="#00bcd4" width="1.5"></a-text>
+      <a-text value="Smart Desk AR" position="0 0.15 0" align="center" color="#00bcd4" width="1.5"></a-text>
       <a-light type="point" position="0 0.8 0" color="#00bcd4" intensity="0.6"></a-light>
     </a-entity>
   </a-marker>
@@ -1064,8 +1073,18 @@ function tapZone(modalId, e) {
     var el = document.getElementById(m.id);
     if (!el) { console.warn(m.name + ' element not found'); onDone(); return; }
 
-    el.addEventListener('model-loaded', function() {
+    el.addEventListener('model-loaded', function(e) {
       console.log(m.name.charAt(0).toUpperCase() + m.name.slice(1) + ' model loaded ✓');
+      try {
+        var mesh = e.detail.model;
+        if (mesh && window.THREE) {
+          var bbox = new THREE.Box3().setFromObject(mesh);
+          var size = bbox.getSize(new THREE.Vector3());
+          var min  = bbox.min;
+          console.log('[' + m.name.toUpperCase() + '] bbox size (model space): x=' + size.x.toFixed(3) + ' y=' + size.y.toFixed(3) + ' z=' + size.z.toFixed(3));
+          console.log('[' + m.name.toUpperCase() + '] bbox min.y=' + min.y.toFixed(3) + ' (ground level of model)');
+        }
+      } catch(err) { console.warn('[' + m.name + '] bbox error:', err); }
       onDone();
     });
     el.addEventListener('model-error', function(e) {

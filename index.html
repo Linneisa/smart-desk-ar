@@ -1005,10 +1005,10 @@ function tapZone(modalId, e) {
      Versi C — rotation Y 180° (balik arah hadap, tidak tukar depth)
      Versi D — rotation X 180° (balik atas-bawah)
   ─────────────────────────────────────────────────────────────────── */
-  var ROT = { x: 0, y: 0, z: 0 };                        /* Versi A */
-  // var ROT = { x: -Math.PI / 2, y: 0,          z: 0 }; /* Versi B */
-  // var ROT = { x: 0,            y: Math.PI,     z: 0 }; /* Versi C */
-  // var ROT = { x: Math.PI,      y: 0,           z: 0 }; /* Versi D */
+  // var ROT = { x: 0,        y: 0,       z: 0 }; /* Versi A — proporsi benar, tapi terbalik */
+  // var ROT = { x: -Math.PI / 2, y: 0,   z: 0 }; /* Versi B */
+  // var ROT = { x: 0,        y: Math.PI, z: 0 }; /* Versi C */
+  var ROT = { x: Math.PI,   y: 0,       z: 0 };   /* Versi D ← AKTIF: flip 180° X */
 
   /* Ukuran target dalam unit marker. Kurangi jika masih terlalu besar. */
   var TARGET_SIZE = 0.8;

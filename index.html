@@ -996,13 +996,19 @@ function tapZone(modalId, e) {
 
   if (!deskEl) { hideLoading(); return; }
 
-  /* Rotasi koreksi orientasi model (diterapkan ke mesh, bukan entity).
-     Dengan memutar mesh dulu lalu menghitung bbox, centering tetap akurat.
-     Ganti nilai ini jika orientasi masih salah:
-       -Math.PI/2  (-90°) ← saat ini
-        Math.PI/2  (+90°) ← coba jika -90° terbalik
-        Math.PI    (180°) ← coba jika hanya perlu dibalik vertikal       */
-  var MODEL_ROTATION_X = -Math.PI / 2;
+  /* ── ROTASI ORIENTASI MODEL ─────────────────────────────────────────
+     Uncomment SATU versi saja. Rotasi diterapkan ke mesh sebelum bbox
+     dihitung, sehingga centering X/Z/Y tetap akurat otomatis.
+
+     Versi A — tanpa rotasi (model sudah Y-up, orientasi benar)      ← AKTIF
+     Versi B — rotation X -90° (Z-up → Y-up, model tidur jadi tegak)
+     Versi C — rotation Y 180° (balik arah hadap, tidak tukar depth)
+     Versi D — rotation X 180° (balik atas-bawah)
+  ─────────────────────────────────────────────────────────────────── */
+  var ROT = { x: 0, y: 0, z: 0 };                        /* Versi A */
+  // var ROT = { x: -Math.PI / 2, y: 0,          z: 0 }; /* Versi B */
+  // var ROT = { x: 0,            y: Math.PI,     z: 0 }; /* Versi C */
+  // var ROT = { x: Math.PI,      y: 0,           z: 0 }; /* Versi D */
 
   /* Ukuran target dalam unit marker. Kurangi jika masih terlalu besar. */
   var TARGET_SIZE = 0.8;
@@ -1013,11 +1019,12 @@ function tapZone(modalId, e) {
     try {
       var model = e.detail.model;
 
-      /* 1. Putar mesh dulu agar bbox yang dihitung sudah dalam
-            orientasi final — centering math tidak perlu berubah. */
-      model.rotation.x = MODEL_ROTATION_X;
+      /* 1. Terapkan rotasi ke mesh sebelum bbox dihitung */
+      model.rotation.set(ROT.x, ROT.y, ROT.z);
       model.updateMatrixWorld(true);
-      console.log('[DESK] rotation applied: x=' + (MODEL_ROTATION_X * 180 / Math.PI).toFixed(0) + '°');
+      console.log('[DESK] rotation — x:' + (ROT.x*180/Math.PI).toFixed(0) +
+        '° y:' + (ROT.y*180/Math.PI).toFixed(0) +
+        '° z:' + (ROT.z*180/Math.PI).toFixed(0) + '°');
 
       /* 2. Bounding box SETELAH rotasi */
       var bbox   = new THREE.Box3().setFromObject(model);

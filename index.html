@@ -93,17 +93,18 @@
 
     .tap-zone {
       position:absolute;
-      top:28%; height:42%;
       pointer-events:all; cursor:pointer;
       display:flex; flex-direction:column;
       align-items:center; justify-content:flex-end;
       padding-bottom:6px; overflow:visible;
       -webkit-tap-highlight-color:transparent;
     }
-    /* Posisi tiap zona — sesuai posisi GLB: monitor(kiri) tablet(tengah) notebook(kanan) */
-    #zone-video  { left:10%; width:28%; }
-    #zone-slides { left:36%; width:28%; }
-    #zone-quiz   { left:62%; width:28%; }
+    /* Posisi tiap zona — sesuai layout model desk.glb baru:
+       dual monitor (kiri-tengah-atas), notepad kuning (kiri-bawah),
+       cup/telepon (kanan). Sesuaikan setelah melihat render aktual. */
+    #zone-video  { top:15%; height:42%; left:5%;  width:52%; } /* dual monitor */
+    #zone-slides { top:55%; height:28%; left:5%;  width:38%; } /* notepad kuning */
+    #zone-quiz   { top:15%; height:55%; left:60%; width:35%; } /* cup/telepon */
 
     /* Label kecil di bawah zona */
     .zone-label {
@@ -361,19 +362,16 @@
   renderer="antialias: true; precision: medium"
 >
   <a-assets timeout="3000">
-    <a-asset-item id="desk-model"     src="./models/desk.glb"></a-asset-item>
-    <a-asset-item id="monitor-model"  src="./models/monitor.glb"></a-asset-item>
-    <a-asset-item id="tablet-model"   src="./models/tablet.glb"></a-asset-item>
-    <a-asset-item id="notebook-model" src="./models/notebook.glb"></a-asset-item>
+    <a-asset-item id="desk-model" src="./models/desk.glb"></a-asset-item>
   </a-assets>
   <a-marker preset="hiro" id="main-marker">
     <a-entity id="desk-group" position="0 0 0">
 
-      <!-- ─── MEJA (desk.glb) ─ scale diatur otomatis JS ──
-           targetSize=1.0 (satu unit marker = lebar marker Hiro).
-           scale="1 1 1" hanya placeholder, JS override saat load.
-           ROTATION: coba "0 90 0" atau "0 180 0" jika meja
-           menghadap arah yang salah setelah muncul.
+      <!-- ─── SMART DESK (desk.glb) ───────────────────────
+           Model tunggal: meja + dual monitor + notepad + cup.
+           Scale diatur otomatis JS (targetSize=1.0).
+           ROTATION: coba "0 90 0" atau "0 180 0" jika model
+           menghadap arah yang salah.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-desk"
         gltf-model="#desk-model"
@@ -382,46 +380,9 @@
         scale="1 1 1">
       </a-entity>
 
-      <!-- ─── MONITOR / VIDEO (monitor.glb) ─ belakang meja ─
-           targetSize=0.35 | berdiri tegak di belakang meja.
-           Posisi Y dihitung JS (deskTopY + offset monitor).
-           ROTATION: coba "0 180 0" jika layar menghadap
-           arah yang salah.
-      ──────────────────────────────────────────────────── -->
-      <a-entity id="ar-monitor"
-        gltf-model="#monitor-model"
-        position="0 0 -0.25"
-        rotation="0 0 0"
-        scale="1 1 1">
-      </a-entity>
-
-      <!-- ─── TABLET / SLIDES (tablet.glb) ─ depan-kiri meja ─
-           targetSize=0.2 | tergeletak flat di permukaan meja.
-           rotation-x=-90: rebahkan model jika berdiri tegak secara default.
-           Ganti ke "0 0 0" jika model sudah flat secara default.
-      ──────────────────────────────────────────────────── -->
-      <a-entity id="ar-tablet"
-        gltf-model="#tablet-model"
-        position="-0.15 0 0.15"
-        rotation="-90 0 0"
-        scale="1 1 1">
-      </a-entity>
-
-      <!-- ─── NOTEBOOK / KUIS (notebook.glb) ─ depan-kanan meja
-           targetSize=0.2 | tergeletak flat di permukaan meja.
-           rotation="0 0 0": model sudah flat secara default.
-           Ganti ke "-90 0 0" jika model muncul berdiri tegak.
-      ──────────────────────────────────────────────────── -->
-      <a-entity id="ar-notebook"
-        gltf-model="#notebook-model"
-        position="0.15 0 0.15"
-        rotation="0 0 0"
-        scale="1 1 1">
-      </a-entity>
-
-      <!-- ─── FALLBACK PRIMITIVES ───────────────────────────
-           Tersembunyi (visible="false"), otomatis muncul via JS
-           jika GLB gagal load. Tap zone tetap berfungsi.
+      <!-- ─── FALLBACK (jika desk.glb gagal load) ─────────
+           Meja sederhana dari primitives agar tap zone tetap
+           berfungsi walau model 3D tidak tersedia.
       ──────────────────────────────────────────────────── -->
       <a-entity id="fallback-desk" visible="false">
         <a-box width="1.0" height="0.05" depth="0.64" position="0 0.26 0"
@@ -431,21 +392,8 @@
         <a-cylinder radius="0.022" height="0.24" position="-0.44 0.12  0.28" material="color:#6B4226"></a-cylinder>
         <a-cylinder radius="0.022" height="0.24" position=" 0.44 0.12  0.28" material="color:#6B4226"></a-cylinder>
       </a-entity>
-      <a-entity id="fallback-monitor" visible="false" position="-0.12 0.24 0">
-        <a-box width="0.10" height="0.13" depth="0.03"
-          material="color:#111111; metalness:0.4; roughness:0.6; emissive:#00bcd4; emissiveIntensity:0.3"></a-box>
-      </a-entity>
-      <a-entity id="fallback-tablet" visible="false" position="0 0.24 0.05">
-        <a-box width="0.13" height="0.016" depth="0.09"
-          material="color:#1565c0; metalness:0.2; roughness:0.5"></a-box>
-      </a-entity>
-      <a-entity id="fallback-notebook" visible="false" position="0.13 0.24 0.02" rotation="0 -20 0">
-        <a-box width="0.09" height="0.12" depth="0.022"
-          material="color:#8B0000; metalness:0.1; roughness:0.4"></a-box>
-      </a-entity>
 
-      <a-text value="Smart Desk AR" position="0 0.15 0" align="center" color="#00bcd4" width="1.5"></a-text>
-      <a-light type="point" position="0 0.8 0" color="#00bcd4" intensity="0.6"></a-light>
+      <a-light type="point" position="0 0.8 0" color="#ffffff" intensity="0.5"></a-light>
     </a-entity>
   </a-marker>
   <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
@@ -1037,135 +985,50 @@ function tapZone(modalId, e) {
 (function() {
   var loadEl = document.getElementById('model-loading');
   var fillEl = document.getElementById('ld-fill');
-  var loadedCount    = 0;
-  var normalizedData = {};
+  console.log('Loading desk model...');
 
-  /* Ukuran target dalam unit marker (1 unit ≈ lebar marker Hiro) */
-  var TARGET_SIZES = { desk:1.0, monitor:0.25, tablet:0.2, notebook:0.2 };
+  var deskEl = document.getElementById('ar-desk');
 
-  var models = [
-    { id:'ar-desk',     name:'desk'     },
-    { id:'ar-monitor',  name:'monitor'  },
-    { id:'ar-tablet',   name:'tablet'   },
-    { id:'ar-notebook', name:'notebook' }
-  ];
-
-  /* Hitung scaleFactor dari bbox model, terapkan via setAttribute,
-     kembalikan dimensi final (model-space × scaleFactor). */
-  function normalizeModel(entity, model, name) {
-    var bbox   = new THREE.Box3().setFromObject(model);
-    var size   = bbox.getSize(new THREE.Vector3());
-    var maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim === 0) { console.warn('[' + name + '] maxDim=0, skip'); return null; }
-
-    var sf = TARGET_SIZES[name] / maxDim;
-    entity.setAttribute('scale', sf + ' ' + sf + ' ' + sf);
-
-    var finalSize = { x: size.x*sf, y: size.y*sf, z: size.z*sf };
-    var topY = bbox.max.y * sf;
-    var minY = bbox.min.y * sf;
-
-    console.log(
-      '[' + name.toUpperCase() + ']' +
-      ' raw:' + size.x.toFixed(2) + 'x' + size.y.toFixed(2) + 'x' + size.z.toFixed(2) +
-      ' sf=' + sf.toFixed(5) +
-      ' final:' + finalSize.x.toFixed(3) + 'x' + finalSize.y.toFixed(3) + 'x' + finalSize.z.toFixed(3) +
-      ' topY=' + topY.toFixed(3) + ' minY=' + minY.toFixed(3)
-    );
-    return { size:finalSize, topY:topY, minY:minY };
-  }
-
-  /* Setelah semua model ter-normalize, hitung & terapkan posisi Y. */
-  function finalizePositions() {
-    var desk = normalizedData.desk;
-    var mon  = normalizedData.monitor;
-
-    /* deskTopY: ketinggian permukaan meja di world space.
-       Jika origin model bukan di bagian bawah (minY ≠ 0),
-       geser entity desk ke atas agar dasarnya tepat di Y=0. */
-    var deskTopY = desk ? desk.topY : 0.3;
-    var deskPos  = '0 0 0';
-    if (desk && desk.minY !== 0) {
-      deskPos = '0 ' + (-desk.minY).toFixed(4) + ' 0';
-      var deskEl = document.getElementById('ar-desk');
-      if (deskEl) deskEl.setAttribute('position', deskPos);
-      deskTopY = desk.topY - desk.minY;
-    }
-
-    /* Monitor: dasar model tepat di permukaan meja, didorong ke belakang. */
-    var monPos = 'n/a';
-    var monEl  = document.getElementById('ar-monitor');
-    if (monEl) {
-      var monOffsetY = mon ? -mon.minY : 0;
-      monPos = '0 ' + (deskTopY + monOffsetY).toFixed(4) + ' -0.3';
-      monEl.setAttribute('position', monPos);
-    }
-
-    /* Tablet: kiri-depan, rebah flat, Y dijamin di atas permukaan. */
-    var tabY   = deskTopY + 0.05;
-    var tabPos = '-0.15 ' + tabY.toFixed(4) + ' 0.15';
-    var tabEl  = document.getElementById('ar-tablet');
-    if (tabEl) tabEl.setAttribute('position', tabPos);
-
-    /* Notebook: kanan-depan, rebah flat. */
-    var notY   = deskTopY + 0.05;
-    var notPos = '0.15 ' + notY.toFixed(4) + ' 0.15';
-    var notEl  = document.getElementById('ar-notebook');
-    if (notEl) notEl.setAttribute('position', notPos);
-
-    /* Label teks di atas scene. */
-    var textEl = document.querySelector('#desk-group a-text');
-    if (textEl) textEl.setAttribute('position', '0 ' + (deskTopY + 0.3).toFixed(3) + ' 0');
-
-    /* Console.log semua posisi final. */
-    console.log('[AR] === FINAL POSITIONS ===');
-    console.log('[AR] desk    : ' + deskPos + '  (deskTopY=' + deskTopY.toFixed(3) + ')');
-    console.log('[AR] monitor : ' + monPos);
-    console.log('[AR] tablet  : ' + tabPos);
-    console.log('[AR] notebook: ' + notPos);
-  }
-
-  function onModelDone() {
-    loadedCount++;
-    if (fillEl) fillEl.style.width = (loadedCount / models.length * 100) + '%';
-    if (loadedCount >= models.length) { finalizePositions(); hideLoading(); }
-  }
   function hideLoading() {
     if (!loadEl) return;
     loadEl.classList.add('hide');
     setTimeout(function() { loadEl.style.display = 'none'; }, 450);
   }
 
-  models.forEach(function(m) {
-    console.log('Loading ' + m.name + ' model...');
-    var el = document.getElementById(m.id);
-    if (!el) { console.warn(m.name + ' element not found'); onModelDone(); return; }
+  if (!deskEl) { hideLoading(); return; }
 
-    el.addEventListener('model-loaded', function(e) {
-      console.log(m.name.charAt(0).toUpperCase() + m.name.slice(1) + ' model loaded ✓');
-      try {
-        var result = normalizeModel(el, e.detail.model, m.name);
-        if (result) normalizedData[m.name] = result;
-      } catch(err) { console.error('[' + m.name + '] normalize error:', err); }
-      onModelDone();
-    });
-    el.addEventListener('model-error', function(e) {
-      console.error(m.name + ' model failed: ' + ((e.detail && e.detail.message) || 'unknown error'));
-      el.setAttribute('visible', 'false');
-      var fb = document.getElementById('fallback-' + m.name);
-      if (fb) fb.setAttribute('visible', 'true');
-      onModelDone();
-    });
+  deskEl.addEventListener('model-loaded', function(e) {
+    console.log('Desk model loaded ✓');
+    if (fillEl) fillEl.style.width = '100%';
+    try {
+      var bbox   = new THREE.Box3().setFromObject(e.detail.model);
+      var size   = bbox.getSize(new THREE.Vector3());
+      var maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 0) {
+        var sf   = 1.0 / maxDim;
+        deskEl.setAttribute('scale', sf + ' ' + sf + ' ' + sf);
+        var minY = bbox.min.y * sf;
+        if (minY !== 0) {
+          deskEl.setAttribute('position', '0 ' + (-minY).toFixed(4) + ' 0');
+        }
+        console.log(
+          '[DESK] raw:' + size.x.toFixed(2) + 'x' + size.y.toFixed(2) + 'x' + size.z.toFixed(2) +
+          ' sf=' + sf.toFixed(5) + ' finalH=' + (size.y * sf).toFixed(3) + ' minY=' + minY.toFixed(3)
+        );
+      }
+    } catch(err) { console.error('[DESK] normalize error:', err); }
+    hideLoading();
   });
 
-  /* Paksa finalize jika ada model yang tidak fire event dalam 12 detik */
-  setTimeout(function() {
-    if (loadedCount < models.length) {
-      console.warn('[AR] Loading timeout — forcing finalize with partial data');
-      finalizePositions();
-      hideLoading();
-    }
-  }, 12000);
+  deskEl.addEventListener('model-error', function(e) {
+    console.error('Desk model failed: ' + ((e.detail && e.detail.message) || 'unknown'));
+    deskEl.setAttribute('visible', 'false');
+    var fb = document.getElementById('fallback-desk');
+    if (fb) fb.setAttribute('visible', 'true');
+    hideLoading();
+  });
+
+  setTimeout(hideLoading, 12000);
 })();
 
 updateProgressBar();

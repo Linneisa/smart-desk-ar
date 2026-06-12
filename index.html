@@ -68,6 +68,21 @@
     #scan-hint p { font-size:13px; }
     @keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.12);opacity:.7} }
 
+    /* ── MODEL LOADING OVERLAY ──────────────────────────── */
+    #model-loading {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:rgba(26,35,126,.93); color:white; padding:22px 32px;
+      border-radius:18px; text-align:center; backdrop-filter:blur(14px);
+      border:1px solid rgba(0,188,212,.45); pointer-events:none; z-index:998;
+      transition:opacity .4s;
+    }
+    #model-loading.hide { opacity:0; pointer-events:none; }
+    #model-loading .ld-icon { font-size:34px; display:block; margin-bottom:10px; animation:pulse 1.5s infinite; }
+    #model-loading p { font-size:13px; line-height:1.6; }
+    #model-loading small { color:#00bcd4; font-size:11px; }
+    #ld-bar { width:140px; height:4px; background:rgba(255,255,255,.12); border-radius:4px; margin:10px auto 0; overflow:hidden; }
+    #ld-fill { height:100%; background:linear-gradient(90deg,#00bcd4,#1a237e); border-radius:4px; width:0%; transition:width .4s; }
+
     /* ── TAP ZONES ───────────────────────────────────── */
     /* Container — pointer-events:none, zona individual yang all */
     #tap-zones {
@@ -85,9 +100,9 @@
       padding-bottom:6px; overflow:visible;
       -webkit-tap-highlight-color:transparent;
     }
-    /* Posisi tiap zona — transparan, hanya label yang terlihat */
-    #zone-slides { left:10%; width:28%; }
-    #zone-video  { left:36%; width:28%; }
+    /* Posisi tiap zona — sesuai posisi GLB: monitor(kiri) tablet(tengah) notebook(kanan) */
+    #zone-video  { left:10%; width:28%; }
+    #zone-slides { left:36%; width:28%; }
     #zone-quiz   { left:62%; width:28%; }
 
     /* Label kecil di bawah zona */
@@ -344,105 +359,72 @@
   vr-mode-ui="enabled: false"
   loading-screen="enabled: false"
 >
-  <a-assets timeout="3000">
-    <img id="wood-tex" src="https://threejs.org/examples/textures/hardwood2_diffuse.jpg" crossorigin="anonymous">
+  <a-assets timeout="8000">
+    <a-asset-item id="desk-model"     src="models/desk.glb"></a-asset-item>
+    <a-asset-item id="monitor-model"  src="models/monitor.glb"></a-asset-item>
+    <a-asset-item id="tablet-model"   src="models/tablet.glb"></a-asset-item>
+    <a-asset-item id="notebook-model" src="models/notebook.glb"></a-asset-item>
   </a-assets>
   <a-marker preset="hiro" id="main-marker">
-    <a-entity id="desk-group" position="0 0 0" scale="0.5 0.5 0.5">
+    <a-entity id="desk-group" position="0 0 0">
 
-      <!-- ─── MEJA ─── -->
-      <!-- Permukaan meja: texture kayu dengan repeat tiling -->
-      <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4"
-        material="src: #wood-tex; repeat: 4 2; roughness: 0.7; metalness: 0"></a-box>
-      <!-- Trim/border gelap di 4 sisi tepi meja -->
-      <a-box position="0 0.655  0.71" width="2.26" height="0.016" depth="0.028"
-        material="color: #3E1F00; metalness: 0.1; roughness: 0.8"></a-box>
-      <a-box position="0 0.655 -0.71" width="2.26" height="0.016" depth="0.028"
-        material="color: #3E1F00; metalness: 0.1; roughness: 0.8"></a-box>
-      <a-box position="-1.11 0.655 0" width="0.028" height="0.016" depth="1.4"
-        material="color: #3E1F00; metalness: 0.1; roughness: 0.8"></a-box>
-      <a-box position=" 1.11 0.655 0" width="0.028" height="0.016" depth="1.4"
-        material="color: #3E1F00; metalness: 0.1; roughness: 0.8"></a-box>
-      <!-- 4 kaki cylinder di setiap pojok -->
-      <a-cylinder position="-0.9 0.3 -0.55" radius="0.055" height="0.6"
-        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
-      <a-cylinder position=" 0.9 0.3 -0.55" radius="0.055" height="0.6"
-        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
-      <a-cylinder position="-0.9 0.3  0.55" radius="0.055" height="0.6"
-        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
-      <a-cylinder position=" 0.9 0.3  0.55" radius="0.055" height="0.6"
-        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
-      <!-- Lapisan kilap tipis di atas meja -->
-      <a-box position="0 0.645 0" width="2.22" height="0.008" depth="1.42"
-        material="color: #00bcd4; opacity: 0.25; transparent: true"></a-box>
-
-      <!-- ─── BUKU (SLIDES) ─── -->
-      <a-entity position="-0.7 0.8 0"
-        animation="property: position; to: -0.7 0.9 0; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
-        <!-- Sampul merah marun dengan kilau -->
-        <a-box width="0.25" height="0.32" depth="0.06"
-          material="color: #8B0000; metalness: 0.15; roughness: 0.4; emissive: #2a0000; emissiveIntensity: 0.4"></a-box>
-        <!-- Sisi halaman (terlihat dari samping kanan) -->
-        <a-box position="0.126 0 0" width="0.004" height="0.30" depth="0.052"
-          material="color: #f0f0e8; roughness: 1; metalness: 0"></a-box>
-        <!-- Area halaman di depan -->
-        <a-box position="0 0 0.032" width="0.22" height="0.29" depth="0.003"
-          material="color: #f5f5f0; roughness: 1; metalness: 0"></a-box>
-        <!-- Garis-garis halaman -->
-        <a-box position="0  0.07 0.034" width="0.17" height="0.003" depth="0.003"
-          material="color: #d0d0cc; roughness: 1"></a-box>
-        <a-box position="0  0.02 0.034" width="0.17" height="0.003" depth="0.003"
-          material="color: #d0d0cc; roughness: 1"></a-box>
-        <a-box position="0 -0.03 0.034" width="0.17" height="0.003" depth="0.003"
-          material="color: #d0d0cc; roughness: 1"></a-box>
-        <a-box position="0 -0.08 0.034" width="0.12" height="0.003" depth="0.003"
-          material="color: #d0d0cc; roughness: 1"></a-box>
-        <a-text value="SLIDES" position="0 -0.26 0" align="center" color="white" width="1.5"></a-text>
-        <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
+      <!-- ─── MEJA (desk.glb) ─────────────────────────────
+           SESUAIKAN scale jika meja terlalu besar/kecil:
+             coba: "0.2 0.2 0.2" | "0.3 0.3 0.3" | "0.5 0.5 0.5"
+           SESUAIKAN rotation Y jika menghadap arah salah:
+             coba: "0 90 0" | "0 180 0"
+      ──────────────────────────────────────────────────── -->
+      <a-entity id="ar-desk"
+        gltf-model="#desk-model"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.4 0.4 0.4">
       </a-entity>
 
-      <!-- ─── POSTER/VIDEO (Layar TV) ─── -->
-      <a-entity position="0 0.8 0">
-        <!-- Frame TV hitam dengan pulse glow pada border -->
-        <a-box width="0.30" height="0.34" depth="0.04"
-          material="color: #111111; metalness: 0.4; roughness: 0.6; emissive: #00bcd4; emissiveIntensity: 0.08"
-          animation="property: material.emissiveIntensity; from: 0.05; to: 0.45; dir: alternate; dur: 1100; loop: true; easing: easeInOutSine"></a-box>
-        <!-- Screen biru terang dengan emissive glow -->
-        <a-box position="0 0.01 0.022" width="0.24" height="0.27" depth="0.008"
-          material="color: #00bcd4; emissive: #00bcd4; emissiveIntensity: 0.7; metalness: 0; roughness: 0.1"></a-box>
-        <!-- Ikon play (cone) di tengah screen -->
-        <a-cone position="0 0.01 0.028" rotation="0 0 -90" radius-bottom="0.04" height="0.06"
-          material="color: #ffffff; opacity: 0.9; transparent: true; emissive: #ffffff; emissiveIntensity: 0.5"></a-cone>
-        <a-text value="VIDEO" position="0 -0.26 0" align="center" color="white" width="1.5"></a-text>
-        <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
+      <!-- ─── MONITOR / VIDEO (monitor.glb) ─ kiri meja ───
+           Tap zone KIRI → buka popup video
+           SESUAIKAN position Y agar duduk di atas permukaan meja:
+             jika desk scale=0.4 dan model ~75 cm → Y ≈ 0.22
+             coba: 0.15 | 0.20 | 0.25 | 0.30
+           SESUAIKAN scale: "0.12" | "0.18" | "0.22"
+           SESUAIKAN rotation Y agar layar menghadap kamera
+      ──────────────────────────────────────────────────── -->
+      <a-entity id="ar-monitor"
+        gltf-model="#monitor-model"
+        position="-0.12 0.22 0"
+        rotation="0 180 0"
+        scale="0.18 0.18 0.18">
       </a-entity>
 
-      <!-- ─── TOMBOL KUIS (Arcade Button) ─── -->
-      <a-entity position="0.7 0.8 0">
-        <!-- Base platform: cylinder lebar & pipih warna gelap -->
-        <a-cylinder position="0 -0.055 0" radius="0.18" height="0.025"
-          material="color: #0d47a1; metalness: 0.3; roughness: 0.4; emissive: #020d33; emissiveIntensity: 0.2"></a-cylinder>
-        <!-- Torus ring cyan glow mengelilingi base -->
-        <a-torus position="0 -0.04 0" radius="0.185" radius-tubular="0.013"
-          material="color: #00bcd4; emissive: #00bcd4; emissiveIntensity: 0.6; metalness: 0.3; roughness: 0.3"
-          animation="property: material.emissiveIntensity; from: 0.4; to: 1.3; dir: alternate; dur: 1000; loop: true; easing: easeInOutSine"></a-torus>
-        <!-- Bagian button yang bounce naik-turun -->
-        <a-entity animation="property: position; from: 0 0 0; to: 0 0.022 0; dir: alternate; dur: 800; easing: easeInOutSine; loop: true">
-          <!-- Body button utama hijau-cyan -->
-          <a-cylinder radius="0.13" height="0.07"
-            material="color: #00c853; emissive: #00bcd4; emissiveIntensity: 0.4; metalness: 0.3; roughness: 0.4"></a-cylinder>
-          <!-- Cap atas lebih cerah (cyan) -->
-          <a-cylinder position="0 0.05 0" radius="0.11" height="0.03"
-            material="color: #00e5ff; emissive: #00e5ff; emissiveIntensity: 0.7; metalness: 0.3; roughness: 0.3"></a-cylinder>
-        </a-entity>
-        <!-- Label statis (tidak ikut bounce) -->
-        <a-text value="?" position="0 0.15 0" align="center" color="white" width="1.8"></a-text>
-        <a-text value="KUIS" position="0 -0.22 0" align="center" color="white" width="1.5"></a-text>
-        <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
+      <!-- ─── TABLET / SLIDES (tablet.glb) ─ tengah meja ──
+           Tap zone TENGAH → buka popup slides
+           SESUAIKAN position Y sama seperti monitor di atas
+           SESUAIKAN rotation X jika model perlu dibaringkan flat:
+             "-90 0 0" (telentang) | "-10 0 0" (sedikit miring)
+           SESUAIKAN scale: "0.10" | "0.15" | "0.20"
+      ──────────────────────────────────────────────────── -->
+      <a-entity id="ar-tablet"
+        gltf-model="#tablet-model"
+        position="0 0.22 0.05"
+        rotation="-10 0 0"
+        scale="0.15 0.15 0.15">
       </a-entity>
 
-      <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
-      <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.6"></a-light>
+      <!-- ─── NOTEBOOK / KUIS (notebook.glb) ─ kanan meja ─
+           Tap zone KANAN → buka popup kuis
+           SESUAIKAN position Y sama seperti monitor di atas
+           SESUAIKAN rotation: "0 -20 0" posisi alami agak miring
+           SESUAIKAN scale: "0.15" | "0.22" | "0.30"
+      ──────────────────────────────────────────────────── -->
+      <a-entity id="ar-notebook"
+        gltf-model="#notebook-model"
+        position="0.13 0.22 0.02"
+        rotation="0 -20 0"
+        scale="0.22 0.22 0.22">
+      </a-entity>
+
+      <a-text value="Smart Desk AR" position="0 0.55 0" align="center" color="#00bcd4" width="1.5"></a-text>
+      <a-light type="point" position="0 0.8 0" color="#00bcd4" intensity="0.6"></a-light>
     </a-entity>
   </a-marker>
   <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
@@ -462,6 +444,12 @@
     </div>
   </div>
   <div id="corner-frame"><div class="c2" style="position:absolute;inset:0;"></div></div>
+
+  <div id="model-loading">
+    <span class="ld-icon">⏳</span>
+    <p>Memuat objek 3D...<br><small>Mohon tunggu sebentar</small></p>
+    <div id="ld-bar"><div id="ld-fill"></div></div>
+  </div>
 
   <div id="scan-hint">
     <span class="scan-icon">📷</span>
@@ -1019,6 +1007,36 @@ function tapZone(modalId, e) {
     openModal(modalId);
   }, 280);
 }
+
+/* ════════════════════════════════════════════════════
+   GLB MODEL LOADING
+════════════════════════════════════════════════════ */
+(function() {
+  var loadEl = document.getElementById('model-loading');
+  var fillEl = document.getElementById('ld-fill');
+  var ids    = ['ar-desk', 'ar-monitor', 'ar-tablet', 'ar-notebook'];
+  var done   = 0;
+
+  function onDone() {
+    done++;
+    if (fillEl) fillEl.style.width = (done / ids.length * 100) + '%';
+    if (done >= ids.length) hideLoading();
+  }
+  function hideLoading() {
+    if (!loadEl) return;
+    loadEl.classList.add('hide');
+    setTimeout(function() { loadEl.style.display = 'none'; }, 450);
+  }
+
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) { onDone(); return; }
+    el.addEventListener('model-loaded', onDone);
+    el.addEventListener('model-error',  onDone);
+  });
+
+  setTimeout(hideLoading, 12000); /* fallback 12 detik */
+})();
 
 updateProgressBar();
 </script>

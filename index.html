@@ -346,44 +346,93 @@
 >
   <a-marker preset="hiro" id="main-marker">
     <a-entity id="desk-group" position="0 0 0" scale="0.5 0.5 0.5">
-      <!-- Meja -->
-      <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4" color="#1a237e"></a-box>
-      <a-box position="-0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position=" 0.9 0.3 -0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position="-0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position=" 0.9 0.3  0.55" width="0.08" height="0.6" depth="0.08" color="#0d47a1"></a-box>
-      <a-box position="0 0.645 0" width="2.22" height="0.01" depth="1.42" color="#00bcd4" opacity="0.6"></a-box>
-      <!-- Buku -->
-      <a-entity position="-0.7 0.8 0">
-        <a-box width="0.25" height="0.32" depth="0.06" color="#e53935"></a-box>
-        <a-box position="0.02 0 0.04" width="0.22" height="0.29" depth="0.01" color="#fff9c4"></a-box>
-        <a-box position="0.02  0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-        <a-box position="0.02  0    0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
-        <a-box position="0.02 -0.05 0.045" width="0.14" height="0.008" depth="0.005" color="#bdbdbd"></a-box>
+
+      <!-- ─── MEJA ─── -->
+      <!-- Permukaan meja: box tebal, material kayu -->
+      <a-box position="0 0.6 0" width="2.2" height="0.08" depth="1.4"
+        material="color: #8B5A2B; metalness: 0; roughness: 0.8"></a-box>
+      <!-- 4 kaki cylinder di setiap pojok -->
+      <a-cylinder position="-0.9 0.3 -0.55" radius="0.055" height="0.6"
+        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
+      <a-cylinder position=" 0.9 0.3 -0.55" radius="0.055" height="0.6"
+        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
+      <a-cylinder position="-0.9 0.3  0.55" radius="0.055" height="0.6"
+        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
+      <a-cylinder position=" 0.9 0.3  0.55" radius="0.055" height="0.6"
+        material="color: #6B4226; metalness: 0; roughness: 0.9"></a-cylinder>
+      <!-- Lapisan kilap tipis di atas meja -->
+      <a-box position="0 0.645 0" width="2.22" height="0.008" depth="1.42"
+        material="color: #00bcd4; opacity: 0.25; transparent: true"></a-box>
+
+      <!-- ─── BUKU (SLIDES) ─── -->
+      <a-entity position="-0.7 0.8 0"
+        animation="property: position; to: -0.7 0.9 0; dir: alternate; dur: 2500; easing: easeInOutSine; loop: true">
+        <!-- Sampul merah marun dengan kilau -->
+        <a-box width="0.25" height="0.32" depth="0.06"
+          material="color: #8B0000; metalness: 0.15; roughness: 0.4; emissive: #2a0000; emissiveIntensity: 0.4"></a-box>
+        <!-- Sisi halaman (terlihat dari samping kanan) -->
+        <a-box position="0.126 0 0" width="0.004" height="0.30" depth="0.052"
+          material="color: #f0f0e8; roughness: 1; metalness: 0"></a-box>
+        <!-- Area halaman di depan -->
+        <a-box position="0 0 0.032" width="0.22" height="0.29" depth="0.003"
+          material="color: #f5f5f0; roughness: 1; metalness: 0"></a-box>
+        <!-- Garis-garis halaman -->
+        <a-box position="0  0.07 0.034" width="0.17" height="0.003" depth="0.003"
+          material="color: #d0d0cc; roughness: 1"></a-box>
+        <a-box position="0  0.02 0.034" width="0.17" height="0.003" depth="0.003"
+          material="color: #d0d0cc; roughness: 1"></a-box>
+        <a-box position="0 -0.03 0.034" width="0.17" height="0.003" depth="0.003"
+          material="color: #d0d0cc; roughness: 1"></a-box>
+        <a-box position="0 -0.08 0.034" width="0.12" height="0.003" depth="0.003"
+          material="color: #d0d0cc; roughness: 1"></a-box>
         <a-text value="SLIDES" position="0 -0.26 0" align="center" color="white" width="1.5"></a-text>
         <a-text value="Materi AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
       </a-entity>
-      <!-- Poster -->
+
+      <!-- ─── POSTER/VIDEO (Layar TV) ─── -->
       <a-entity position="0 0.8 0">
-        <a-box width="0.28" height="0.36" depth="0.03" color="#1565c0"></a-box>
-        <a-box  position="0 0 0.02" width="0.24" height="0.30" depth="0.01" color="#0d0d0d"></a-box>
-        <a-cone position="0 0 0.03" rotation="0 0 -90" radius-bottom="0.07" height="0.10" color="#00bcd4"></a-cone>
+        <!-- Frame TV hitam dengan pulse glow pada border -->
+        <a-box width="0.30" height="0.34" depth="0.04"
+          material="color: #111111; metalness: 0.4; roughness: 0.6; emissive: #00bcd4; emissiveIntensity: 0.08"
+          animation="property: material.emissiveIntensity; from: 0.05; to: 0.45; dir: alternate; dur: 1100; loop: true; easing: easeInOutSine"></a-box>
+        <!-- Screen biru terang dengan emissive glow -->
+        <a-box position="0 0.01 0.022" width="0.24" height="0.27" depth="0.008"
+          material="color: #00bcd4; emissive: #00bcd4; emissiveIntensity: 0.7; metalness: 0; roughness: 0.1"></a-box>
+        <!-- Ikon play (cone) di tengah screen -->
+        <a-cone position="0 0.01 0.028" rotation="0 0 -90" radius-bottom="0.04" height="0.06"
+          material="color: #ffffff; opacity: 0.9; transparent: true; emissive: #ffffff; emissiveIntensity: 0.5"></a-cone>
         <a-text value="VIDEO" position="0 -0.26 0" align="center" color="white" width="1.5"></a-text>
         <a-text value="Tutorial AR" position="0 -0.33 0" align="center" color="#00bcd4" width="1.2"></a-text>
       </a-entity>
-      <!-- Kuis -->
+
+      <!-- ─── TOMBOL KUIS (Arcade Button) ─── -->
       <a-entity position="0.7 0.8 0">
-        <a-cylinder radius="0.14" height="0.08" color="#00897b"></a-cylinder>
-        <a-text value="?" position="0 0.12 0" align="center" color="white" width="1.8"></a-text>
+        <!-- Bagian 3D yang berputar perlahan -->
+        <a-entity animation="property: rotation; to: 0 360 0; dur: 5000; loop: true; easing: linear">
+          <!-- Torus base -->
+          <a-torus position="0 -0.07 0" radius="0.14" radius-tubular="0.022"
+            material="color: #004d40; metalness: 0.5; roughness: 0.4; emissive: #001a14; emissiveIntensity: 0.3"></a-torus>
+          <!-- Cylinder utama hijau dengan emissive glow pulse -->
+          <a-cylinder radius="0.12" height="0.09"
+            material="color: #00c853; emissive: #00bcd4; emissiveIntensity: 0.5; metalness: 0.2; roughness: 0.3"
+            animation="property: material.emissiveIntensity; from: 0.3; to: 1.0; dir: alternate; dur: 900; loop: true; easing: easeInOutSine"></a-cylinder>
+          <!-- Dome atas lebih cerah (cyan) -->
+          <a-cylinder position="0 0.065 0" radius="0.085" height="0.04"
+            material="color: #00e5ff; emissive: #00e5ff; emissiveIntensity: 0.8; metalness: 0.3; roughness: 0.2"></a-cylinder>
+        </a-entity>
+        <!-- Label statis (tidak ikut berputar) -->
+        <a-text value="?" position="0 0.14 0" align="center" color="white" width="1.8"></a-text>
         <a-text value="KUIS" position="0 -0.22 0" align="center" color="white" width="1.5"></a-text>
         <a-text value="Uji Pengetahuan" position="0 -0.30 0" align="center" color="#00bcd4" width="1.0"></a-text>
       </a-entity>
+
       <a-text value="Smart Desk AR" position="0 1.15 0" align="center" color="#00bcd4" width="3"></a-text>
-      <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.4"></a-light>
+      <a-light type="point" position="0 1.5 0" color="#00bcd4" intensity="0.6"></a-light>
     </a-entity>
   </a-marker>
-  <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
-  <a-light type="directional" position="1 2 1" color="#ffffff" intensity="0.5"></a-light>
+  <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+  <a-light type="directional" position="2 4 2" color="#ffffff" intensity="0.8"></a-light>
+  <a-light type="directional" position="-1 2 -1" color="#b0d4ff" intensity="0.3"></a-light>
   <a-entity camera></a-entity>
 </a-scene>
 

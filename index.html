@@ -397,25 +397,25 @@
 
       <!-- ─── TABLET / SLIDES (tablet.glb) ─ depan-kiri meja ─
            targetSize=0.2 | tergeletak flat di permukaan meja.
-           rotation-x=-90 merebahkan model (Y model → Z dunia).
+           rotation-x=-90: rebahkan model jika berdiri tegak secara default.
            Ganti ke "0 0 0" jika model sudah flat secara default.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-tablet"
         gltf-model="#tablet-model"
-        position="-0.2 0 0.1"
+        position="-0.15 0 0.15"
         rotation="-90 0 0"
         scale="1 1 1">
       </a-entity>
 
       <!-- ─── NOTEBOOK / KUIS (notebook.glb) ─ depan-kanan meja
            targetSize=0.2 | tergeletak flat di permukaan meja.
-           rotation-x=-90 merebahkan model (Y model → Z dunia).
-           Ganti ke "0 0 0" jika model sudah flat secara default.
+           rotation="0 0 0": model sudah flat secara default.
+           Ganti ke "-90 0 0" jika model muncul berdiri tegak.
       ──────────────────────────────────────────────────── -->
       <a-entity id="ar-notebook"
         gltf-model="#notebook-model"
-        position="0.2 0 0.1"
-        rotation="-90 0 0"
+        position="0.15 0 0.15"
+        rotation="0 0 0"
         scale="1 1 1">
       </a-entity>
 
@@ -1041,7 +1041,7 @@ function tapZone(modalId, e) {
   var normalizedData = {};
 
   /* Ukuran target dalam unit marker (1 unit ≈ lebar marker Hiro) */
-  var TARGET_SIZES = { desk:1.0, monitor:0.35, tablet:0.2, notebook:0.2 };
+  var TARGET_SIZES = { desk:1.0, monitor:0.25, tablet:0.2, notebook:0.2 };
 
   var models = [
     { id:'ar-desk',     name:'desk'     },
@@ -1092,68 +1092,37 @@ function tapZone(modalId, e) {
       deskTopY = desk.topY - desk.minY;
     }
 
-    /* Monitor: dasar model tepat di permukaan meja. */
+    /* Monitor: dasar model tepat di permukaan meja, didorong ke belakang. */
     var monPos = 'n/a';
     var monEl  = document.getElementById('ar-monitor');
     if (monEl) {
       var monOffsetY = mon ? -mon.minY : 0;
-      monPos = '0 ' + (deskTopY + monOffsetY).toFixed(4) + ' -0.25';
+      monPos = '0 ' + (deskTopY + monOffsetY).toFixed(4) + ' -0.3';
       monEl.setAttribute('position', monPos);
     }
 
-    /* Tablet: tengah-depan kiri, Y lebih tinggi (+0.05) agar pasti
-       di atas permukaan, X/Z lebih dekat ke tengah meja. */
+    /* Tablet: kiri-depan, rebah flat, Y dijamin di atas permukaan. */
     var tabY   = deskTopY + 0.05;
     var tabPos = '-0.15 ' + tabY.toFixed(4) + ' 0.15';
     var tabEl  = document.getElementById('ar-tablet');
     if (tabEl) tabEl.setAttribute('position', tabPos);
 
-    /* Notebook: tengah-depan kanan, sama dengan tablet. */
+    /* Notebook: kanan-depan, rebah flat. */
     var notY   = deskTopY + 0.05;
     var notPos = '0.15 ' + notY.toFixed(4) + ' 0.15';
     var notEl  = document.getElementById('ar-notebook');
     if (notEl) notEl.setAttribute('position', notPos);
 
-    /* Label teks di atas scene */
+    /* Label teks di atas scene. */
     var textEl = document.querySelector('#desk-group a-text');
     if (textEl) textEl.setAttribute('position', '0 ' + (deskTopY + 0.3).toFixed(3) + ' 0');
 
-    /* ── Console.log semua posisi final untuk debugging ── */
+    /* Console.log semua posisi final. */
     console.log('[AR] === FINAL POSITIONS ===');
     console.log('[AR] desk    : ' + deskPos + '  (deskTopY=' + deskTopY.toFixed(3) + ')');
     console.log('[AR] monitor : ' + monPos);
     console.log('[AR] tablet  : ' + tabPos);
     console.log('[AR] notebook: ' + notPos);
-
-    /* ── Debug: cyan glow planes di posisi tablet & notebook ──
-       Berguna untuk melihat apakah posisi sudah di atas meja.
-       Hapus kedua <a-plane id="debug-tab"> dan <a-plane id="debug-not">
-       ini setelah posisi sudah tepat. */
-    var group = document.getElementById('desk-group');
-    if (group) {
-      ['debug-tab', 'debug-not'].forEach(function(id) {
-        var old = document.getElementById(id);
-        if (old) old.parentNode.removeChild(old);
-      });
-
-      var debugTab = document.createElement('a-plane');
-      debugTab.id = 'debug-tab';
-      debugTab.setAttribute('position', '-0.15 ' + tabY.toFixed(4) + ' 0.15');
-      debugTab.setAttribute('rotation', '-90 0 0');
-      debugTab.setAttribute('width',  '0.22');
-      debugTab.setAttribute('height', '0.22');
-      debugTab.setAttribute('material', 'color:#00bcd4; emissive:#00bcd4; emissiveIntensity:1; opacity:0.4; transparent:true; side:double');
-      group.appendChild(debugTab);
-
-      var debugNot = document.createElement('a-plane');
-      debugNot.id = 'debug-not';
-      debugNot.setAttribute('position', '0.15 ' + notY.toFixed(4) + ' 0.15');
-      debugNot.setAttribute('rotation', '-90 0 0');
-      debugNot.setAttribute('width',  '0.22');
-      debugNot.setAttribute('height', '0.22');
-      debugNot.setAttribute('material', 'color:#ffd740; emissive:#ffd740; emissiveIntensity:1; opacity:0.4; transparent:true; side:double');
-      group.appendChild(debugNot);
-    }
   }
 
   function onModelDone() {
